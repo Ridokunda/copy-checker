@@ -1,44 +1,50 @@
-import acsse.csc2a.gui.ShipPane;
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 
+package acsse.csc2a.file;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import acsse.csc2a.model.Ship;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 /**
- * @author Mr D Ogwok
- * @version P05
+ * @author ridok
+ *
  */
-class Main extends Application{	
+public class FileHandler {
+	private Ship[] arrShip;
 	
-	// ShipPane Scene to be placed on Stage
-	private ShipPane pane = null;
-	
-	/**
-	 * Main method
-	 * @param args
-	 * 		Command Line arguments
-	 */
-	public static void main(String[] args) {
-		// launch the JavaFX Application
-		launch(args);
+	public Ship[] readFile(String Filename)
+	{
+		File textfile = new File(Filename);
+		try(Scanner textin = new Scanner(textfile))
+		{
+			int n = 0;
+			while(textin.hasNext())
+			{
+				
+				String line = textin.nextLine();
+				Pattern ShipPattern = Pattern.compile("(^[SH]\\d{4})[a-zA-Z]");
+				Matcher shipMatcher = ShipPattern.matcher(line);
+				if (shipMatcher.matches())
+				{
+					System.out.println(line + "matches");
+				}
+				else
+				{
+					n = n +1;
+					System.out.println("hh" + n);
+					
+				}
+			}
+		}
+		catch(FileNotFoundException ex)
+		{
+			ex.printStackTrace();
+		}
+		Ship[] aryShip = null;
+		
+		
+		return aryShip;
 	}
-
-	/* TODO: JavaDoc */
-	@Override
-	public void start(Stage mainStage) throws Exception {
-		mainStage.setTitle("Ship Transportation Information");
-		
-		// Create the ShipPane
-		pane = new ShipPane();
-		
-		//Set the Scene
-		Scene scene = new Scene(pane);
-		
-		mainStage.setWidth(500);
-		mainStage.setHeight(500);
-		mainStage.setScene(scene);
-		
-		// Open the curtains
-		mainStage.show();
-	}
-
 }

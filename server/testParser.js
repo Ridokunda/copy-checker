@@ -1,5 +1,6 @@
-// server/testParser.js
-const parseJavaFile = require('./logic/javaParser');
+const path = require('path');
+const { parseJavaFile, extractFeatures } = require('./logic/javaParser');
 
-const result = parseJavaFile('./uploads/Test1.java');
+const filePath = path.join(__dirname, './uploads/Test1.java');
+const result = parseJavaFile(filePath);
 console.log(JSON.stringify(result, null, 2));
