@@ -5,16 +5,19 @@ function FileUpload() {
   const [originalFile, setOriginalFile] = useState(null);
   const [suspectFile, setSuspectFile] = useState(null);
   const [message, setMessage] = useState('');
+  const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleOriginalChange = (e) => {
     setOriginalFile(e.target.files[0]);
     setMessage('');
+    setResult(null);
   };
 
   const handleSuspectChange = (e) => {
     setSuspectFile(e.target.files[0]);
     setMessage('');
+    setResult(null);
   };
 
   const handleSubmit = async (e) => {
@@ -24,16 +27,17 @@ function FileUpload() {
     }
 
     const formData = new FormData();
-    formData.append("files", originalFile);
-    formData.append("files", suspectFile);
+    formData.append("original", originalFile);
+    formData.append("suspect", suspectFile);
 
     setIsLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/files/upload", formData);
-      setMessage(`Files uploaded: ${res.data.files.join(", ")}`);
+      const res = await axios.post("http://localhost:5000/api/predict", formData);
+      setResult(res.data);
+      setMessage("✅ Prediction complete.");
     } catch (err) {
       console.error(err);
-      setMessage("Upload failed. Check the console or backend.");
+      setMessage("❌ Prediction failed. Check the server.");
     } finally {
       setIsLoading(false);
     }
@@ -43,29 +47,30 @@ function FileUpload() {
     <div style={styles.container}>
       <h2 style={{ color: 'black' }}>Upload Java Files for Comparison</h2>
       <form onSubmit={handleSubmit} style={styles.form}>
-        <label>File 1:</label>
+        <label>Original File:</label>
         <input type="file" accept=".java" onChange={handleOriginalChange} />
         {originalFile && <p>{originalFile.name}</p>}
 
-        <label>File 2:</label>
+        <label>Suspect File:</label>
         <input type="file" accept=".java" onChange={handleSuspectChange} />
         {suspectFile && <p>{suspectFile.name}</p>}
 
         <button type="submit" disabled={!originalFile || !suspectFile || isLoading}>
-          {isLoading ? 'Uploading...' : 'Upload Files'}
+          {isLoading ? 'Comparing...' : 'Compare Files'}
         </button>
-        {originalFile && suspectFile && !isLoading && (
-        <button
-            type="button"
-            //onClick={() => alert("Compare functionality coming soon!")}
-            style={{ marginTop: '10px' }}
-        >
-            Compare Files
-        </button>
-        )}
-
       </form>
+
       {message && <p style={styles.message}>{message}</p>}
+
+      {result && (
+        <div style={styles.resultBox}>
+          <h3>Prediction: {result.prediction === 1 ? 'Plagiarized' : 'Not Plagiarized'}</h3>
+          <p>Confidence:
+            <br /> Not Plagiarized: {(result.confidence[0] * 100).toFixed(2)}%
+            <br /> Plagiarized: {(result.confidence[1] * 100).toFixed(2)}%
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -82,7 +87,6 @@ const styles = {
     backgroundColor: '#f9f9f9',
     color: 'black'
   },
-
   form: {
     display: 'flex',
     flexDirection: 'column',
@@ -92,6 +96,13 @@ const styles = {
   message: {
     marginTop: '10px',
     fontWeight: 'bold'
+  },
+  resultBox: {
+    marginTop: '20px',
+    padding: '10px',
+    border: '1px solid #ccc',
+    borderRadius: '6px',
+    backgroundColor: '#eef'
   }
 };
 

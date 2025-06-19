@@ -1,0 +1,20 @@
+import acsse.csc2a.file.FileHandler;
+
+/**
+ * @author ridok
+ *
+ */
+public class Main {
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		System.out.println("ggg");
+		FileHandler FH = new FileHandler();
+	
+		FH.readFile("data/Normal.txt");
+	}
+
+}
