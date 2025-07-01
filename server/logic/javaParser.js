@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 
-const BLOCK_KEYWORDS = ['class', 'if', 'else', 'for', 'while', 'switch', 'try', 'catch', 'method'];
+
 
 function parseJavaFile(filePath) {
   const code = fs.readFileSync(filePath, 'utf-8');

@@ -58,7 +58,7 @@ function processCase(casePath) {
       const subDir = path.join(plagRoot, level);
       fs.readdirSync(subDir).forEach(fileId => {
         const compPath = extractJavaFile(path.join(subDir, fileId));
-        if (compPath) processPair(originalFile, compPath, 1); // label = 1
+        if (compPath) processPair(originalFile, compPath, 1); 
       });
     });
   }
@@ -68,7 +68,7 @@ function processCase(casePath) {
   if (fs.existsSync(nonPlagDir)) {
     fs.readdirSync(nonPlagDir).forEach(sub => {
       const compPath = extractJavaFile(path.join(nonPlagDir, sub));
-      if (compPath) processPair(originalFile, compPath, 0); // label = 0
+      if (compPath) processPair(originalFile, compPath, 0); 
     });
   }
 }

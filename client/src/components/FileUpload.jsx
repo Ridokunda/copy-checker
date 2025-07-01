@@ -34,10 +34,10 @@ function FileUpload() {
     try {
       const res = await axios.post("http://localhost:5000/api/predict", formData);
       setResult(res.data);
-      setMessage("✅ Prediction complete.");
+      setMessage("Prediction complete.");
     } catch (err) {
       console.error(err);
-      setMessage("❌ Prediction failed. Check the server.");
+      setMessage("Prediction failed. Check the server.");
     } finally {
       setIsLoading(false);
     }
