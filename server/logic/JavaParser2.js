@@ -190,16 +190,16 @@ function extractFeatures(ast) {
     max_depth: 0
   };
 
+  const sequence = []; // collect node types
   let methodCount = 0;
 
   function traverse(node, depth = 0) {
     if (!node || typeof node !== 'object') return;
+    if (node.type) sequence.push(node.type);
     if (depth > stats.max_depth) stats.max_depth = depth;
 
     switch (node.type) {
-      case "ClassDeclaration":
-        stats.num_classes++;
-        break;
+      case "ClassDeclaration": stats.num_classes++; break;
       case "MethodDeclaration":
         stats.num_methods++;
         methodCount++;
@@ -207,41 +207,19 @@ function extractFeatures(ast) {
           stats.total_method_lengths += node.body.body.length;
         }
         break;
-      case "IfStatement":
-        stats.num_if++;
-        stats.num_statements++;
-        break;
-      case "ForStatement":
-        stats.num_for++;
-        stats.num_statements++;
-        break;
-      case "WhileStatement":
-        stats.num_while++;
-        stats.num_statements++;
-        break;
-      case "ReturnStatement":
-        stats.num_return++;
-        stats.num_statements++;
-        break;
-      case "ImportDeclaration":
-        stats.num_imports++;
-        break;
-      case "PackageDeclaration":
-        stats.num_package++;
-        break;
-      case "ExpressionStatement":
-        stats.num_expressions++;
-        stats.num_statements++;
-        break;
+      case "IfStatement": stats.num_if++; stats.num_statements++; break;
+      case "ForStatement": stats.num_for++; stats.num_statements++; break;
+      case "WhileStatement": stats.num_while++; stats.num_statements++; break;
+      case "ReturnStatement": stats.num_return++; stats.num_statements++; break;
+      case "ImportDeclaration": stats.num_imports++; break;
+      case "PackageDeclaration": stats.num_package++; break;
+      case "ExpressionStatement": stats.num_expressions++; stats.num_statements++; break;
     }
 
     for (const key in node) {
       const child = node[key];
-      if (Array.isArray(child)) {
-        child.forEach(n => traverse(n, depth + 1));
-      } else if (typeof child === 'object') {
-        traverse(child, depth + 1);
-      }
+      if (Array.isArray(child)) child.forEach(n => traverse(n, depth + 1));
+      else if (typeof child === 'object') traverse(child, depth + 1);
     }
   }
 
@@ -249,8 +227,33 @@ function extractFeatures(ast) {
   stats.avg_method_length = methodCount > 0 ? stats.total_method_lengths / methodCount : 0;
   delete stats.total_method_lengths;
 
+  // --- n-gram extraction ---
+  function generateNGrams(seq, n) {
+    const grams = {};
+    for (let i = 0; i <= seq.length - n; i++) {
+      const gram = seq.slice(i, i + n).join('_');
+      grams[gram] = (grams[gram] || 0) + 1;
+    }
+    return grams;
+  }
+
+  function topKGrams(grams, k = 10) {
+    return Object.entries(grams)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, k)
+      .reduce((acc, [k, v]) => {
+        acc[`ngram_${k}`] = v;
+        return acc;
+      }, {});
+  }
+
+  const ngrams2 = topKGrams(generateNGrams(sequence, 2), 10);
+  const ngrams3 = topKGrams(generateNGrams(sequence, 3), 10);
+  Object.assign(stats, ngrams2, ngrams3);
+
   return stats;
 }
+
 
 module.exports = {
   parseJavaFile,

@@ -1,11 +1,8 @@
 import sys
 import json
 import joblib
-
-# --- Prediction Function ---
-def bagging_predict(trees, row):
-    predictions = [predict(tree, row) for tree in trees]
-    return max(set(predictions), key=predictions.count)
+from collections import Counter
+from math import log2
 
 def predict(node, row):
     if row[node["index"]] < node["value"]:
@@ -13,20 +10,20 @@ def predict(node, row):
     else:
         return predict(node["right"], row) if isinstance(node["right"], dict) else node["right"]
 
-# --- Main Execution ---
+def bagging_predict(trees, row):
+    predictions = [predict(tree, row) for tree in trees]
+    return max(set(predictions), key=predictions.count)
+
 def main():
     try:
         input_json = sys.stdin.read()
         payload = json.loads(input_json)
         features = payload["features"]
 
-        model = joblib.load("model.pkl")
+        model = joblib.load("model/model.pkl")
         prediction = bagging_predict(model, features)
 
-        output = {
-            "prediction": prediction
-        }
-        print(json.dumps(output))
+        print(json.dumps({"prediction": prediction}))
     except Exception as e:
         print(json.dumps({"error": str(e)}))
 

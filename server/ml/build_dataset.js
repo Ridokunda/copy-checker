@@ -1,25 +1,20 @@
 const fs = require('fs');
 const path = require('path');
-const { parseJavaFile, extractFeatures } = require('../logic/JavaParser2');
+const { parseJavaFile, extractFeatures } = require('../logic/JavaParser2.js');
 
-const BASE_DIR = '../../IR-Plag-Dataset';
-const OUTPUT_FILE = '../../dataset.json';
+const BASE_DIR = './IR-Plag-Dataset';
+const OUTPUT_FILE = './dataset.json';
 
-function toVector(features) {
-  return [
-    features.num_classes,
-    features.num_methods,
-    features.num_if,
-    features.num_for,
-    features.num_while,
-    features.num_return,
-    features.num_imports,
-    features.num_package,
-    features.num_expressions,
-    features.num_statements,
-    features.avg_method_length,
-    features.max_depth
-  ];
+// Collect all keys across the dataset to ensure consistent vector length
+function collectAllKeys(featureList) {
+  const allKeys = new Set();
+  featureList.forEach(f => Object.keys(f).forEach(k => allKeys.add(k)));
+  return Array.from(allKeys);
+}
+
+// Convert a feature object into a vector using a global list of keys
+function toVector(features, keys) {
+  return keys.map(k => features[k] || 0);
 }
 
 function collectJavaFiles(dirPath) {
@@ -38,6 +33,7 @@ function collectJavaFiles(dirPath) {
 
 function buildDataset() {
   const dataset = [];
+  const featuresList = []; // collect feature objects
   const cases = fs.readdirSync(BASE_DIR);
 
   for (const caseFolder of cases) {
@@ -52,24 +48,35 @@ function buildDataset() {
 
     for (const orig of originals) {
       const origAst = parseJavaFile(orig);
-      const origVec = toVector(extractFeatures(origAst));
+      const origFeatures = extractFeatures(origAst);
 
       for (const plag of plagiarized) {
         const plagAst = parseJavaFile(plag);
-        const plagVec = toVector(extractFeatures(plagAst));
-        dataset.push({ features: [...origVec, ...plagVec], label: 1 });
+        const plagFeatures = extractFeatures(plagAst);
+        dataset.push({ f1: origFeatures, f2: plagFeatures, label: 1 });
+        featuresList.push(origFeatures, plagFeatures);
       }
 
       for (const nonPlag of nonPlagiarized) {
         const nonAst = parseJavaFile(nonPlag);
-        const nonVec = toVector(extractFeatures(nonAst));
-        dataset.push({ features: [...origVec, ...nonVec], label: 0 });
+        const nonFeatures = extractFeatures(nonAst);
+        dataset.push({ f1: origFeatures, f2: nonFeatures, label: 0 });
+        featuresList.push(origFeatures, nonFeatures);
       }
     }
   }
 
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(dataset, null, 2));
-  console.log(`✅ Dataset built: ${dataset.length} examples saved to ${OUTPUT_FILE}`);
+  // Create consistent vector keys
+  const allKeys = collectAllKeys(featuresList);
+
+  // Convert dataset to numeric vectors
+  const final = dataset.map(item => ({
+    features: [...toVector(item.f1, allKeys), ...toVector(item.f2, allKeys)],
+    label: item.label
+  }));
+
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(final, null, 2));
+  console.log(`✅ Dataset built with ${final.length} samples and ${allKeys.length * 2} features → ${OUTPUT_FILE}`);
 }
 
 buildDataset();
