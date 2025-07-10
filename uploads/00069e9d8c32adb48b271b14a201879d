@@ -1,0 +1,22 @@
+import java.util.ArrayList;
+
+/**
+ * @author ridok
+ *
+ */
+public class ColliderContainer {
+	public ArrayList<PhotonCollider> PhotonColliders = new ArrayList<>();
+	
+	public void addCollider(PhotonCollider collider)
+	{
+		PhotonColliders.add(collider);
+	}
+	
+	public void testCollider()
+	{
+		for(PhotonCollider collider : PhotonColliders)
+		{
+			collider.reportMicroBlackhole();
+		}
+	}
+}

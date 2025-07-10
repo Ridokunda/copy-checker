@@ -1,0 +1,18 @@
+/**
+ * 
+ */
+
+/**
+ * @author ridok
+ *
+ */
+public class BasicCollider extends PhotonCollider{
+
+	@Override
+	public void reportMicroBlackhole() {
+		System.out.println("Basic Collider : " + photonAmount/10);
+		
+		
+	}
+
+}

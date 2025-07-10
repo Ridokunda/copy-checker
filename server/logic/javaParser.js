@@ -94,8 +94,8 @@ function extractFeatures(ast) {
     preorder_sequence: preorder
   };
 }
-module.exports = {
+/*module.exports = {
   parseJavaFile,
   extractFeatures
-};
+};*/
 

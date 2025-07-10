@@ -65,12 +65,17 @@ function FileUpload() {
       {result && (
         <div style={styles.resultBox}>
           <h3>Prediction: {result.prediction === 1 ? 'Plagiarized' : 'Not Plagiarized'}</h3>
-          <p>Confidence:
-            <br /> Not Plagiarized: {(result.confidence[0] * 100).toFixed(2)}%
-            <br /> Plagiarized: {(result.confidence[1] * 100).toFixed(2)}%
-          </p>
+          {result.confidence ? (
+            <p>Confidence:
+              <br /> Not Plagiarized: {(result.confidence[0] * 100).toFixed(2)}%
+              <br /> Plagiarized: {(result.confidence[1] * 100).toFixed(2)}%
+            </p>
+          ) : (
+            <p>No confidence score available.</p>
+          )}
         </div>
       )}
+
     </div>
   );
 }

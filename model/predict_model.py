@@ -1,28 +1,34 @@
-
 import sys
 import json
 import joblib
-import numpy as np
 
+# --- Prediction Function ---
+def bagging_predict(trees, row):
+    predictions = [predict(tree, row) for tree in trees]
+    return max(set(predictions), key=predictions.count)
 
-model = joblib.load("model/model.pkl")
+def predict(node, row):
+    if row[node["index"]] < node["value"]:
+        return predict(node["left"], row) if isinstance(node["left"], dict) else node["left"]
+    else:
+        return predict(node["right"], row) if isinstance(node["right"], dict) else node["right"]
 
+# --- Main Execution ---
 def main():
-    # Read input 
-    input_json = sys.stdin.read()
-    payload = json.loads(input_json)
+    try:
+        input_json = sys.stdin.read()
+        payload = json.loads(input_json)
+        features = payload["features"]
 
-    
-    features = np.array(payload["features"]).reshape(1, -1)
-    prediction = model.predict(features)[0]
-    proba = model.predict_proba(features)[0].tolist()
+        model = joblib.load("model.pkl")
+        prediction = bagging_predict(model, features)
 
-    # Output result
-    output = {
-        "prediction": int(prediction),
-        "confidence": proba
-    }
-    print(json.dumps(output))
+        output = {
+            "prediction": prediction
+        }
+        print(json.dumps(output))
+    except Exception as e:
+        print(json.dumps({"error": str(e)}))
 
 if __name__ == "__main__":
     main()

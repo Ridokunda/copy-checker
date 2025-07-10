@@ -1,0 +1,258 @@
+// Recursive Descent Parser for a Subset of Java - Returns AST
+// Focused on: classes, methods, if/for/while blocks, import/package declarations
+
+const fs = require("fs");
+
+// --- Tokenizer ---
+function tokenize(code) {
+  const tokenPattern = /\b(package|import|class|public|private|protected|void|int|if|for|while|static|return|try|catch|new|throws|throw)\b|\{|\}|\(|\)|\.|;|\[|\]|,|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[a-zA-Z_][a-zA-Z0-9_]*|\S/g;
+  const tokens = [];
+  let match;
+  while ((match = tokenPattern.exec(code)) !== null) {
+    tokens.push(match[0]);
+  }
+  return tokens;
+}
+
+// --- Parser Class ---
+class Parser {
+  constructor(tokens) {
+    this.tokens = tokens;
+    this.pos = 0;
+  }
+
+  current() {
+    return this.tokens[this.pos];
+  }
+
+  next() {
+    this.pos++;
+    return this.current();
+  }
+
+  match(...expected) {
+    const token = this.current();
+    if (expected.includes(token)) {
+      this.next();
+      return true;
+    }
+    return false;
+  }
+
+  parse() {
+    const ast = { type: "Program", body: [] };
+
+    while (this.match("package", "import")) {
+      const keyword = this.tokens[this.pos - 1];
+      const value = this.parseQualifiedName();
+      if (this.match(";")) {
+        ast.body.push({ type: keyword === "package" ? "PackageDeclaration" : "ImportDeclaration", value });
+      }
+    }
+
+    while (this.pos < this.tokens.length) {
+      const classNode = this.parseClass();
+      if (classNode) ast.body.push(classNode);
+      else this.next();
+    }
+    return ast;
+  }
+
+  parseQualifiedName() {
+    const parts = [];
+    while (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(this.current())) {
+      parts.push(this.current());
+      this.next();
+      if (!this.match(".")) break;
+    }
+    return parts.join(".");
+  }
+
+  parseClass() {
+    this.match("public", "private", "protected");
+    if (!this.match("class")) return null;
+    const name = this.current();
+    this.next();
+    if (!this.match("{")) return null;
+
+    const classNode = {
+      type: "ClassDeclaration",
+      name,
+      body: []
+    };
+
+    while (!this.match("}")) {
+      if (this.pos >= this.tokens.length) break;
+      const member = this.parseMethodOrStatement();
+      if (member) classNode.body.push(member);
+    }
+
+    return classNode;
+  }
+
+  parseMethodOrStatement() {
+    const start = this.pos;
+    this.match("public", "private", "protected", "static");
+
+    if (this.match("void", "int")) {
+      const name = this.current();
+      this.next();
+      if (!this.match("(")) return null;
+      while (!this.match(")")) this.next();
+      if (!this.match("{")) return null;
+
+      const body = this.parseBlock();
+      return {
+        type: "MethodDeclaration",
+        name,
+        body
+      };
+    } else {
+      this.pos = start;
+      return this.parseStatement();
+    }
+  }
+
+  parseStatement() {
+    if (this.match("if")) {
+      const test = this.parseParens();
+      const consequent = this.parseBlock();
+      return { type: "IfStatement", test, consequent };
+    }
+    if (this.match("for")) {
+      const test = this.parseParens();
+      const body = this.parseBlock();
+      return { type: "ForStatement", test, body };
+    }
+    if (this.match("while")) {
+      const test = this.parseParens();
+      const body = this.parseBlock();
+      return { type: "WhileStatement", test, body };
+    }
+    if (this.match("return")) {
+      const value = this.current();
+      this.next();
+      this.match(";");
+      return { type: "ReturnStatement", value };
+    }
+    if (this.match("{")) {
+      return this.parseBlock();
+    }
+    const value = this.current();
+    this.next();
+    return { type: "ExpressionStatement", value };
+  }
+
+  parseBlock() {
+    const body = [];
+    while (!this.match("}")) {
+      if (this.pos >= this.tokens.length) break;
+      const stmt = this.parseStatement();
+      if (stmt) body.push(stmt);
+    }
+    return { type: "BlockStatement", body };
+  }
+
+  parseParens() {
+    const tokens = [];
+    if (!this.match("(")) return null;
+    while (!this.match(")")) {
+      if (this.pos >= this.tokens.length) break;
+      tokens.push(this.current());
+      this.next();
+    }
+    return { type: "Condition", tokens };
+  }
+}
+
+// --- Main Parse Function ---
+function parseJavaFile(filepath) {
+  const code = fs.readFileSync(filepath, "utf-8");
+  const tokens = tokenize(code);
+  const parser = new Parser(tokens);
+  return parser.parse();
+}
+
+// --- Feature Extraction ---
+function extractFeatures(ast) {
+  const stats = {
+    num_classes: 0,
+    num_methods: 0,
+    num_if: 0,
+    num_for: 0,
+    num_while: 0,
+    num_return: 0,
+    num_imports: 0,
+    num_package: 0,
+    num_expressions: 0,
+    num_statements: 0,
+    total_method_lengths: 0,
+    max_depth: 0
+  };
+
+  let methodCount = 0;
+
+  function traverse(node, depth = 0) {
+    if (!node || typeof node !== 'object') return;
+    if (depth > stats.max_depth) stats.max_depth = depth;
+
+    switch (node.type) {
+      case "ClassDeclaration":
+        stats.num_classes++;
+        break;
+      case "MethodDeclaration":
+        stats.num_methods++;
+        methodCount++;
+        if (node.body && node.body.body) {
+          stats.total_method_lengths += node.body.body.length;
+        }
+        break;
+      case "IfStatement":
+        stats.num_if++;
+        stats.num_statements++;
+        break;
+      case "ForStatement":
+        stats.num_for++;
+        stats.num_statements++;
+        break;
+      case "WhileStatement":
+        stats.num_while++;
+        stats.num_statements++;
+        break;
+      case "ReturnStatement":
+        stats.num_return++;
+        stats.num_statements++;
+        break;
+      case "ImportDeclaration":
+        stats.num_imports++;
+        break;
+      case "PackageDeclaration":
+        stats.num_package++;
+        break;
+      case "ExpressionStatement":
+        stats.num_expressions++;
+        stats.num_statements++;
+        break;
+    }
+
+    for (const key in node) {
+      const child = node[key];
+      if (Array.isArray(child)) {
+        child.forEach(n => traverse(n, depth + 1));
+      } else if (typeof child === 'object') {
+        traverse(child, depth + 1);
+      }
+    }
+  }
+
+  traverse(ast);
+  stats.avg_method_length = methodCount > 0 ? stats.total_method_lengths / methodCount : 0;
+  delete stats.total_method_lengths;
+
+  return stats;
+}
+
+module.exports = {
+  parseJavaFile,
+  extractFeatures
+};
