@@ -7,7 +7,7 @@ from sklearn.metrics import classification_report, accuracy_score
 import joblib
 
 # Load the dataset
-with open("../dataset.json", "r") as f:
+with open("dataset.json", "r") as f:
     data = json.load(f)
 
 X = np.array([item["features"] for item in data])
