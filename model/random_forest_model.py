@@ -15,7 +15,7 @@ X = [item["features"] for item in dataset]
 y = [item["label"] for item in dataset]
 feature_names = feature_keys["similarity_keys"]
 
-print("\n🔍 Feature Names (first 10):")
+print("\n Feature Names (first 10):")
 for i, name in enumerate(feature_names[:10]):
     print(f"{i}: {name}")
 
@@ -138,7 +138,7 @@ print("Model saved to model.pkl")
 with open("feature_importance.json", "w") as f:
     json.dump(importance, f, indent=2)
 
-print("\n📊 Feature Importance:")
+print("\n Feature Importance:")
 for feat, score in sorted(importance.items(), key=lambda x: x[1], reverse=True)[:10]:
     print(f"{feat}: {score:.4f}")
 

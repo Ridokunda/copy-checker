@@ -105,7 +105,7 @@ function buildDataset() {
     const featuresList = [];
     const cases = fs.readdirSync(BASE_DIR);
 
-    console.log('📂 Scanning dataset directories...');
+    console.log(' Scanning dataset directories...');
 
     // First pass: collect all features
     for (const caseFolder of cases) {
@@ -117,7 +117,7 @@ function buildDataset() {
         const nonPlagPath = path.join(casePath, 'non-plagiarized');
 
         if (!fs.existsSync(originalPath)) {
-            console.log(`⚠️  Skipping ${caseFolder}: no 'original' directory`);
+            console.log(`Skipping ${caseFolder}: no 'original' directory`);
             continue;
         }
 
@@ -125,7 +125,7 @@ function buildDataset() {
         const plagiarized = fs.existsSync(plagPath) ? collectJavaFiles(plagPath) : [];
         const nonPlagiarized = fs.existsSync(nonPlagPath) ? collectJavaFiles(nonPlagPath) : [];
 
-        console.log(`📁 Processing ${caseFolder}: ${originals.length} original, ${plagiarized.length} plagiarized, ${nonPlagiarized.length} non-plagiarized`);
+        console.log(`Processing ${caseFolder}: ${originals.length} original, ${plagiarized.length} plagiarized, ${nonPlagiarized.length} non-plagiarized`);
 
         for (const orig of originals) {
             try {
@@ -141,7 +141,7 @@ function buildDataset() {
                         featuresList.push(plagFeatures);
                         dataset.push({ f1: origFeatures, f2: plagFeatures, label: 1 });
                     } catch (err) {
-                        console.error(`❌ Error processing ${plag}:`, err.message);
+                        console.error(`Error processing ${plag}:`, err.message);
                     }
                 }
 
@@ -153,26 +153,26 @@ function buildDataset() {
                         featuresList.push(nonFeatures);
                         dataset.push({ f1: origFeatures, f2: nonFeatures, label: 0 });
                     } catch (err) {
-                        console.error(`❌ Error processing ${nonPlag}:`, err.message);
+                        console.error(`Error processing ${nonPlag}:`, err.message);
                     }
                 }
             } catch (err) {
-                console.error(`❌ Error processing ${orig}:`, err.message);
+                console.error(`Error processing ${orig}:`, err.message);
             }
         }
     }
 
     if (dataset.length === 0) {
-        console.error('❌ No valid samples found in dataset!');
+        console.error('No valid samples found in dataset!');
         return;
     }
 
     // Get all unique feature keys
     const allKeys = collectAllKeys(featuresList);
-    console.log(`🔑 Found ${allKeys.length} unique features`);
+    console.log(`Found ${allKeys.length} unique features`);
 
     // Normalize features
-    console.log('🔄 Normalizing features...');
+    console.log('Normalizing features...');
     const normalizedFeatures = normalizeFeatures(featuresList, allKeys);
     
     // Create feature map for quick lookup
@@ -182,7 +182,7 @@ function buildDataset() {
     });
 
     // Build final dataset with similarity features
-    console.log('🔄 Computing similarity features...');
+    console.log('Computing similarity features...');
     const finalDataset = dataset.map(item => {
         const f1Normalized = featureMap.get(item.f1);
         const f2Normalized = featureMap.get(item.f2);
@@ -213,7 +213,7 @@ function buildDataset() {
     const plagiarizedCount = finalDataset.filter(item => item.label === 1).length;
     const nonPlagiarizedCount = finalDataset.filter(item => item.label === 0).length;
 
-    console.log(`📊 Dataset Statistics:`);
+    console.log(` Dataset Statistics:`);
     console.log(`   Total samples: ${finalDataset.length}`);
     console.log(`   Plagiarized: ${plagiarizedCount} (${(plagiarizedCount/finalDataset.length*100).toFixed(1)}%)`);
     console.log(`   Non-plagiarized: ${nonPlagiarizedCount} (${(nonPlagiarizedCount/finalDataset.length*100).toFixed(1)}%)`);
@@ -222,8 +222,8 @@ function buildDataset() {
     console.log(`   Similarity features: ${similarityKeys.length}`);
 
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(finalDataset, null, 2));
-    console.log(`✅ Dataset built → ${OUTPUT_FILE}`);
-    console.log(`💾 Feature keys saved to ${FEATURE_KEYS_FILE}`);
+    console.log(`Dataset built → ${OUTPUT_FILE}`);
+    console.log(`Feature keys saved to ${FEATURE_KEYS_FILE}`);
 }
 
 buildDataset();

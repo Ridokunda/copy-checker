@@ -139,37 +139,6 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
   }
 });
 
-router.post('/compare', (req, res) => {
-  const { features1, features2 } = req.body;
 
-  if (!features1 || !features2) {
-    return res.status(400).json({ error: 'Missing feature vectors' });
-  }
-
-  const input = JSON.stringify({ features: [...features1, ...features2] });
-
-  const py = spawn('python', ['model/predict_model.py']);
-  let result = '';
-
-  py.stdout.on('data', (data) => {
-    result += data.toString();
-  });
-
-  py.stderr.on('data', (data) => {
-    console.error('Python error:', data.toString());
-  });
-
-  py.on('close', (code) => {
-    try {
-      const output = JSON.parse(result);
-      res.json(output);
-    } catch (err) {
-      res.status(500).json({ error: 'Failed to parse Python output' });
-    }
-  });
-
-  py.stdin.write(input);
-  py.stdin.end();
-});
 
 module.exports = router;

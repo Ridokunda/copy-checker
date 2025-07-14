@@ -10,7 +10,7 @@ with open("feature_keys.json", "r") as f:
 feature_names = feature_keys["similarity_keys"]
 
 def predict_single(tree, row):
-    """Traverse a single decision‑tree dictionary and return its class label."""
+    #Traverse a single decision‑tree dictionary and return its class label.
     while isinstance(tree, dict):
         if row[tree["index"]] < tree["value"]:
             tree = tree["left"]
@@ -20,7 +20,7 @@ def predict_single(tree, row):
 
 
 def forest_predict(trees, row):
-    """Return majority vote and per‑class confidence from the forest."""
+    #Return majority vote and per‑class confidence from the forest.
     votes = [predict_single(t, row) for t in trees]
     counts = Counter(votes)
     total = len(votes)
