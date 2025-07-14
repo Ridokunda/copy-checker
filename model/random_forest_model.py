@@ -8,8 +8,16 @@ from math import log2
 with open("dataset.json", "r") as f:
     dataset = json.load(f)
 
+with open("feature_keys.json", "r") as f:
+    feature_keys = json.load(f)
+
 X = [item["features"] for item in dataset]
 y = [item["label"] for item in dataset]
+feature_names = feature_keys["similarity_keys"]
+
+print("\n🔍 Feature Names (first 10):")
+for i, name in enumerate(feature_names[:10]):
+    print(f"{i}: {name}")
 
 # --- Decision Tree Implementation ---
 def gini(groups, classes):
@@ -78,13 +86,32 @@ def predict(node, row):
 def subsample(dataset, ratio):
     return [random.choice(dataset) for _ in range(round(len(dataset) * ratio))]
 
-def random_forest(train, max_depth, min_size, sample_size, n_trees):
+def random_forest(train, max_depth, min_size, sample_size, n_trees, feature_names):
     trees = []
+    # Track feature usage across all trees
+    feature_usage = {i: 0 for i in range(len(feature_names))}
+    
     for _ in range(n_trees):
         sample = subsample(train, sample_size)
         tree = build_tree(sample, max_depth, min_size)
         trees.append(tree)
-    return trees
+        # Record feature usage in this tree
+        record_feature_usage(tree, feature_usage)
+    
+    # Convert usage counts to importance scores
+    total_splits = sum(feature_usage.values())
+    feature_importance = {
+        feature_names[i]: count/total_splits if total_splits > 0 else 0
+        for i, count in feature_usage.items()
+    }
+    
+    return trees, feature_importance
+
+def record_feature_usage(node, feature_usage):
+    if isinstance(node, dict):
+        feature_usage[node["index"]] += 1
+        record_feature_usage(node["left"], feature_usage)
+        record_feature_usage(node["right"], feature_usage)
 
 def bagging_predict(trees, row):
     predictions = [predict(tree, row) for tree in trees]
@@ -96,11 +123,24 @@ random.shuffle(dataset_combined)
 split_index = int(len(dataset_combined) * 0.8)
 train_set, test_set = dataset_combined[:split_index], dataset_combined[split_index:]
 
-forest = random_forest(train_set, max_depth=20, min_size=1, sample_size=0.8, n_trees=10)
+forest, importance = random_forest(
+    train_set, 
+    max_depth=20, 
+    min_size=1, 
+    sample_size=0.8, 
+    n_trees=10,
+    feature_names=feature_names
+    )
 
 # Save the model
 joblib.dump(forest, "model.pkl")
-print("✅ Model saved to model.pkl")
+print("Model saved to model.pkl")
+with open("feature_importance.json", "w") as f:
+    json.dump(importance, f, indent=2)
+
+print("\n📊 Feature Importance:")
+for feat, score in sorted(importance.items(), key=lambda x: x[1], reverse=True)[:10]:
+    print(f"{feat}: {score:.4f}")
 
 # Evaluate
 correct = 0
@@ -109,4 +149,4 @@ for row, label in test_set:
     correct += prediction == label
 
 accuracy = correct / len(test_set)
-print(f"✅ Accuracy: {accuracy:.4f}")
+print(f"Accuracy: {accuracy:.4f}")

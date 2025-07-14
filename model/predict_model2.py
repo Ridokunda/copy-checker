@@ -5,7 +5,9 @@ from collections import Counter
 
 # Load trained Random‑Forest model (list of decision trees stored via joblib)
 model = joblib.load("model.pkl")  # list[dict]
-
+with open("feature_keys.json", "r") as f:
+    feature_keys = json.load(f)
+feature_names = feature_keys["similarity_keys"]
 
 def predict_single(tree, row):
     """Traverse a single decision‑tree dictionary and return its class label."""
@@ -14,7 +16,7 @@ def predict_single(tree, row):
             tree = tree["left"]
         else:
             tree = tree["right"]
-    return tree  # terminal label (0 or 1)
+    return tree  
 
 
 def forest_predict(trees, row):
@@ -26,15 +28,33 @@ def forest_predict(trees, row):
     prob0 = counts.get(0, 0) / total
     prob1 = counts.get(1, 0) / total
     prediction = 1 if prob1 >= prob0 else 0
-    return prediction, [prob0, prob1]
+    # Get top 3 influential features
+    influential = []
+    for tree in trees:
+        node = tree
+        while isinstance(node, dict):
+            feat_name = feature_names[node["index"]]
+            value = row[node["index"]]
+            threshold = node["value"]
+            influential.append((feat_name, value, threshold))
+            node = node["left"] if value < threshold else node["right"]
+    
+    # Count most common decision features
+    feat_counter = Counter([f[0] for f in influential])
+    top_features = feat_counter.most_common(3)
+    
+    return prediction, [prob0, prob1], top_features
 
 
 def main():
     try:
         payload = json.loads(sys.stdin.read())
         features = payload["features"]
-        pred, confidence = forest_predict(model, features)
-        print(json.dumps({"prediction": pred, "confidence": confidence}))
+        pred, confidence, top_features = forest_predict(model, features)
+        print(json.dumps({"prediction": pred, 
+                          "confidence": confidence,
+                          "top_features": top_features
+                          }))
     except Exception as e:
         print(json.dumps({"error": str(e)}))
 
