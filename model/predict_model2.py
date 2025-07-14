@@ -50,10 +50,21 @@ def main():
     try:
         payload = json.loads(sys.stdin.read())
         features = payload["features"]
+
+        # Validate feature vector length matches expected
+        expected_length = len(feature_names)
+        if len(features) != expected_length:
+            print(json.dumps({
+                "error": f"Feature vector length mismatch. Expected {expected_length}, got {len(features)}",
+                "expected_features": feature_names
+            }))
+            return
+
         pred, confidence, top_features = forest_predict(model, features)
         print(json.dumps({"prediction": pred, 
                           "confidence": confidence,
-                          "top_features": top_features
+                          "top_features": top_features,
+                          "feature_names": feature_names
                           }))
     except Exception as e:
         print(json.dumps({"error": str(e)}))

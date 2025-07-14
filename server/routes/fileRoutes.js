@@ -17,45 +17,53 @@ try {
   console.error('Warning: Could not load feature_keys.json. Using dynamic feature extraction.');
 }
 
-// Convert a feature object into a vector using the training feature keys
-function toVector(features, keys) {
-  // If keys is an object (like from feature_keys.json), use its similarity_keys property
-  if (keys && typeof keys === 'object' && !Array.isArray(keys) && keys.similarity_keys) {
-    return keys.similarity_keys.map(k => features[k] || 0);
-  }
-  // Otherwise assume it's an array
-  return Array.isArray(keys) ? keys.map(k => features[k] || 0) : [];
-}
 
-// Helper function to normalize feature vectors using training keys
-function normalizeFeatures(features) {
-  if (FEATURE_KEYS) {
-    return toVector(features, FEATURE_KEYS);
-  } else {
-    // Fallback to dynamic extraction (not recommended for production)
-    const baseFeatures = [
-      features.num_classes || 0,
-      features.num_methods || 0,
-      features.num_if || 0,
-      features.num_for || 0,
-      features.num_while || 0,
-      features.num_return || 0,
-      features.num_imports || 0,
-      features.num_package || 0,
-      features.num_expressions || 0,
-      features.num_statements || 0,
-      features.avg_method_length || 0,
-      features.max_depth || 0
-    ];
+function calculateSimilarityFeatures(f1, f2, keys) {
+    const similarities = {};
     
-    const ngramKeys = Object.keys(features)
-      .filter(key => key.startsWith('ngram_'))
-      .sort();
+    // Convert to vectors first
+    const v1 = keys.map(k => f1[k] || 0);
+    const v2 = keys.map(k => f2[k] || 0);
     
-    const ngramFeatures = ngramKeys.map(key => features[key] || 0);
+    // 1. Cosine similarity
+    const dotProduct = v1.reduce((sum, val, i) => sum + val * v2[i], 0);
+    const norm1 = Math.sqrt(v1.reduce((sum, val) => sum + val * val, 0));
+    const norm2 = Math.sqrt(v2.reduce((sum, val) => sum + val * val, 0));
+    similarities.cosine_similarity = (norm1 * norm2) > 0 ? dotProduct / (norm1 * norm2) : 0;
     
-    return [...baseFeatures, ...ngramFeatures];
-  }
+    // 2. Euclidean distance (normalized)
+    const euclideanDist = Math.sqrt(v1.reduce((sum, val, i) => sum + Math.pow(val - v2[i], 2), 0));
+    const maxDist = Math.sqrt(keys.length * Math.max(...v1.concat(v2)) ** 2);
+    similarities.euclidean_similarity = maxDist > 0 ? 1 - (euclideanDist / maxDist) : 1;
+    
+    // 3. Manhattan distance (normalized)
+    const manhattanDist = v1.reduce((sum, val, i) => sum + Math.abs(val - v2[i]), 0);
+    const maxManhattan = keys.length * Math.max(...v1.concat(v2));
+    similarities.manhattan_similarity = maxManhattan > 0 ? 1 - (manhattanDist / maxManhattan) : 1;
+    
+    // 4. Jaccard similarity for binary features (presence/absence)
+    const binary1 = v1.map(x => x > 0 ? 1 : 0);
+    const binary2 = v2.map(x => x > 0 ? 1 : 0);
+    const intersection = binary1.reduce((sum, val, i) => sum + (val && binary2[i] ? 1 : 0), 0);
+    const union = binary1.reduce((sum, val, i) => sum + (val || binary2[i] ? 1 : 0), 0);
+    similarities.jaccard_similarity = union > 0 ? intersection / union : 0;
+    
+    // 5. Individual feature ratios and differences
+    keys.forEach(key => {
+        const val1 = f1[key] || 0;
+        const val2 = f2[key] || 0;
+        const maxVal = Math.max(val1, val2);
+        const minVal = Math.min(val1, val2);
+        
+        // Ratio similarity (how similar are the values)
+        similarities[`ratio_${key}`] = maxVal > 0 ? minVal / maxVal : 1;
+        
+        // Absolute difference (normalized)
+        const maxPossible = Math.max(val1, val2, 1); // Avoid division by zero
+        similarities[`diff_${key}`] = 1 - (Math.abs(val1 - val2) / maxPossible);
+    });
+    
+    return similarities;
 }
 
 router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }]), async (req, res) => {
@@ -71,24 +79,26 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     const f1 = extractFeatures(ast1);
     const f2 = extractFeatures(ast2);
 
-    console.log('Features 1:', f1);
-    console.log('Features 2:', f2);
-
     // Normalize features to ensure consistent vector length
-    const normalizedF1 = normalizeFeatures(f1);
+    /*const normalizedF1 = normalizeFeatures(f1);
     const normalizedF2 = normalizeFeatures(f2);
     
-    const vector = [...normalizedF1, ...normalizedF2];
+    const vector = [...normalizedF1, ...normalizedF2];*/
     
-    console.log('Feature vector length:', vector.length);
-    console.log('Feature vector:', vector);
+    // Calculate similarity features using the same method as training
+    const allKeys = Object.keys({...f1, ...f2});
+    const similarityFeatures = calculateSimilarityFeatures(f1, f2, allKeys);
+    
+    // Convert to array in same order as training
+    const featureVector = FEATURE_KEYS?.similarity_keys?.map(k => similarityFeatures[k] || 0) || 
+                         Object.values(similarityFeatures);
 
     // Call Python script
     const py = spawn('python', ['model/predict_model2.py']);
     let output = '';
     let errorOutput = '';
 
-    py.stdin.write(JSON.stringify({ features: vector }));
+    py.stdin.write(JSON.stringify({ features: featureVector }));
     py.stdin.end();
 
     py.stdout.on('data', (data) => {

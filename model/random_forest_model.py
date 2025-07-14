@@ -125,10 +125,10 @@ train_set, test_set = dataset_combined[:split_index], dataset_combined[split_ind
 
 forest, importance = random_forest(
     train_set, 
-    max_depth=20, 
-    min_size=1, 
+    max_depth=15, 
+    min_size=5, 
     sample_size=0.8, 
-    n_trees=10,
+    n_trees=60,
     feature_names=feature_names
     )
 
