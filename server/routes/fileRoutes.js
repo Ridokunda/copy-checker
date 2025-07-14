@@ -3,7 +3,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const { parseJavaFile, extractFeatures } = require('../logic/JavaParser2');
+const { parseJavaFile, extractFeatures, tokenize, Parser } = require('../logic/JavaParser2.js');
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
@@ -19,7 +19,12 @@ try {
 
 // Convert a feature object into a vector using the training feature keys
 function toVector(features, keys) {
-  return keys.map(k => features[k] || 0);
+  // If keys is an object (like from feature_keys.json), use its similarity_keys property
+  if (keys && typeof keys === 'object' && !Array.isArray(keys) && keys.similarity_keys) {
+    return keys.similarity_keys.map(k => features[k] || 0);
+  }
+  // Otherwise assume it's an array
+  return Array.isArray(keys) ? keys.map(k => features[k] || 0) : [];
 }
 
 // Helper function to normalize feature vectors using training keys

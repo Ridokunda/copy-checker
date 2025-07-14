@@ -1,7 +1,7 @@
 // Enhanced feature vector construction for plagiarism detection
 const fs = require('fs');
 const path = require('path');
-const { parseJavaFile, extractFeatures, tokenize, Parser } = require('../logic/JavaParser3.js');
+const { parseJavaFile, extractFeatures, tokenize, Parser } = require('../logic/JavaParser2.js');
 
 const BASE_DIR = './IR-Plag-Dataset';
 const OUTPUT_FILE = './dataset.json';

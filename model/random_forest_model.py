@@ -96,7 +96,7 @@ random.shuffle(dataset_combined)
 split_index = int(len(dataset_combined) * 0.8)
 train_set, test_set = dataset_combined[:split_index], dataset_combined[split_index:]
 
-forest = random_forest(train_set, max_depth=10, min_size=1, sample_size=0.8, n_trees=10)
+forest = random_forest(train_set, max_depth=20, min_size=1, sample_size=0.8, n_trees=10)
 
 # Save the model
 joblib.dump(forest, "model.pkl")
