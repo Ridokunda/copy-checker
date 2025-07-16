@@ -1,0 +1,88 @@
+{
+  "type": "Program",
+  "body": [
+    {
+      "type": "ClassDeclaration",
+      "name": "T4",
+      "body": [
+        {
+          "type": "MethodDeclaration",
+          "modifiers": [
+            "public",
+            "static"
+          ],
+          "returnType": "void",
+          "name": "main",
+          "params": [
+            {
+              "type": "String[]",
+              "name": "args"
+            }
+          ],
+          "body": {
+            "type": "BlockStatement",
+            "body": [
+              {
+                "type": "IfStatement",
+                "test": {
+                  "type": "Condition",
+                  "tokens": [
+                    "one",
+                    ">",
+                    "two"
+                  ]
+                },
+                "consequent": {
+                  "type": "BlockStatement",
+                  "body": [
+                    {
+                      "type": "SystemCall",
+                      "value": ".out.println(miles+\"\\t\\t\"+miles*1.609)"
+                    }
+                  ]
+                },
+                "alternate": null
+              },
+              {
+                "type": "VariableDeclaration",
+                "kind": "typed",
+                "dataType": "int",
+                "declarations": [
+                  {
+                    "name": "miles",
+                    "value": "1"
+                  }
+                ],
+                "modifiers": []
+              },
+              {
+                "type": "WhileStatement",
+                "test": {
+                  "type": "Condition",
+                  "tokens": [
+                    "miles",
+                    "<=",
+                    "10"
+                  ]
+                },
+                "body": {
+                  "type": "BlockStatement",
+                  "body": [
+                    {
+                      "type": "SystemCall",
+                      "value": ".out.println(miles+\"\\t\\t\"+miles*1.609)"
+                    },
+                    {
+                      "type": "ExpressionStatement",
+                      "expression": "miles ++"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -36,6 +36,7 @@ class Parser {
 
   match(...expected) {
     const token = this.current();
+    console.log(`Matching against: ${expected}, current token: ${token}`);
     if (expected.includes(token)) {
       this.next();
       return true;
@@ -125,8 +126,16 @@ class Parser {
           this.match(",");
         }
         console.log(params);
+        // if method throws exception
+        if (this.match("throws")) {
+          while (this.current() !== "{" && this.pos < this.tokens.length) {
+            this.next();
+          }
+        }
+        
         if (!this.match("{")) return null;
         const body = this.parseBlock();
+        //console.log(body);
         return {
           type: "MethodDeclaration",
           modifiers,
@@ -152,17 +161,28 @@ class Parser {
   }
 
   parseVariableDeclaration() {
+    console.log("starting parsing variable declaraton");
     const startPos = this.pos;
-    const isFinal = this.match("final");
+    
+    const modifiers = [];
+    while (this.match("public", "private", "protected", "static", "final")) {
+      modifiers.push(this.tokens[this.pos - 1]);
+    }
+    
     const type = this.current();
     
     if (!["int", "String", "boolean", "double", "float", "char", "byte", "short", "long"].includes(type)) {
+      this.pos = startPos;
       return null;
     }
     this.next();
     
     const declarations = [];
     let name = this.current();
+    if (!name || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+      this.pos = startPos; 
+      return null;
+    }
     this.next();
     
     let value = null;
@@ -183,13 +203,17 @@ class Parser {
       declarations.push({ name, value });
     }
     
-    this.match(";");
+    if (!this.match(";")) {
+      this.pos = startPos;
+      return null;
+    }
     
     return {
       type: "VariableDeclaration",
-      kind: isFinal ? "final" : "typed",
+      kind: modifiers.includes("final") ? "final" : "typed",
       dataType: type,
-      declarations
+      declarations,
+      modifiers
     };
   }
 
@@ -205,30 +229,33 @@ class Parser {
   
 
   parseStatement() {
-    const varDecl = this.parseVariableDeclaration();
-    if (varDecl) return varDecl;
-
-     if (this.match("if")) {
+    console.log("startin parsing statement");
+    
+    if(this.match("System")){
+      let value = this.parseSystemCall();
+      return {type: "SystemCall", value};
+    }
+    if (this.match("if")) {
       const test = this.parseCondition();
-      const consequent = this.parseBlock();
+      const consequent = this.parseStatementOrBlock();
       let alternate = null;
       if (this.match("else")) {
         if (this.current() === "if") {
           alternate = this.parseStatement();
         } else {
-          alternate = this.parseBlock();
+          alternate = this.parseStatementOrBlock();
         }
       }
       return { type: "IfStatement", test, consequent, alternate };
     }
     if (this.match("for")) {
       const test = this.parseCondition();
-      const body = this.parseBlock();
+      const body = this.parseStatementOrBlock();
       return { type: "ForStatement", test, body };
     }
     if (this.match("while")) {
       const test = this.parseCondition();
-      const body = this.parseBlock();
+      const body = this.parseStatementOrBlock();
       return { type: "WhileStatement", test, body };
     }
     if (this.match("return")) {
@@ -243,9 +270,30 @@ class Parser {
       return this.parseBlock();
     }
 
+    const varDecl = this.parseVariableDeclaration();
+    if (varDecl) return varDecl;
+
     const expression = this.parseExpression();
     this.match(";");
     return expression ? { type: "ExpressionStatement", expression } : null;
+  }
+  
+  parseStatementOrBlock() {
+    if (this.current() === "{") {
+      this.next();
+      return this.parseBlock();
+    } else {
+      return this.parseStatement();
+    }
+  }
+
+  parseSystemCall(){
+    let value = []
+    while(!this.match(";")){
+      value.push(this.current());
+      this.next();
+    }
+    return value.join("");
   }
 
   parseBlock() {
@@ -254,12 +302,18 @@ class Parser {
     while (!this.match("}")) {
       if (this.pos >= this.tokens.length) break;
       const stmt = this.parseStatement();
-      if (stmt) body.push(stmt);
+      if (stmt) {
+        body.push(stmt);
+      } else {
+        this.next();
+      } 
     }
+    console.log("end parse block");
     return { type: "BlockStatement", body };
   }
 
   parseCondition() {
+    console.log("starting parsing condition");
     const tokens = [];
     if (!this.match("(")) return null;
     while (!this.match(")")) {
