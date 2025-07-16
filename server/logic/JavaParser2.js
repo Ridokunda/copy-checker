@@ -5,7 +5,7 @@ const fs = require("fs");
 
 // --- Tokenizer ---
 function tokenize(code) {
-  const tokenPattern = /\b(package|import|class|public|private|protected|void|int|if|for|while|static|return|try|catch|new|throws|throw)\b|\{|\}|\(|\)|\.|;|\[|\]|,|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[a-zA-Z_][a-zA-Z0-9_]*|\S/g;
+  const tokenPattern = /\b(package|import|class|public|private|protected|void|int|final|boolean|char|byte|short|long|float|double|String|if|for|while|static|return|try|catch|new|throws|throw)\b|\{|\}|\(|\)|\.|;|\[|\]|,|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[a-zA-Z_][a-zA-Z0-9_]*|\S/g;
   const tokens = [];
   let match;
   while ((match = tokenPattern.exec(code)) !== null) {
@@ -83,64 +83,164 @@ class Parser {
 
     while (!this.match("}")) {
       if (this.pos >= this.tokens.length) break;
-      const member = this.parseMethodOrStatement();
+      const member = this.parseMethodOrField();
       if (member) classNode.body.push(member);
     }
 
     return classNode;
   }
 
-  parseMethodOrStatement() {
+  parseMethodOrField() {
     const start = this.pos;
-    this.match("public", "private", "protected", "static");
+    const modifiers = [];
 
-    if (this.match("void", "int")) {
+    //collect modifiers
+    while (this.match("public", "private", "protected", "static", "final", "synchronized", "volatile", "transient")) {
+      modifiers.push(this.tokens[this.pos - 1]);
+    }
+    //if it is a method
+    if (this.match("void", "int", "String", "boolean", "double", "float", "char", "byte", "short", "long")) {
+      const returnType = this.tokens[this.pos - 1];
       const name = this.current();
       this.next();
-      if (!this.match("(")) return null;
-      while (!this.match(")")) this.next();
-      if (!this.match("{")) return null;
 
-      const body = this.parseBlock();
-      return {
-        type: "MethodDeclaration",
-        name,
-        body
-      };
-    } else {
-      this.pos = start;
-      return this.parseStatement();
+      if (this.match("(")){
+        const params = [];
+        while (!this.match(")")) {
+          if (this.pos >= this.tokens.length) break;
+          const paramType = this.current();
+          if (["final"].includes(paramType)) {
+            this.next();
+            continue;
+          }
+          this.next();
+          const paramName = this.current();
+          this.next();
+          params.push({ type: paramType, name: paramName });
+          this.match(",");
+        }
+
+        if (!this.match("{")) return null;
+        const body = this.parseBlock();
+        return {
+          type: "MethodDeclaration",
+          modifiers,
+          returnType,
+          name,
+          params,
+          body
+        };
+      }
+    }  
+    //if is field declaration
+    this.pos = start;
+    const varDecl = this.parseVariableDeclaration();
+    if (varDecl) {
+      if (modifiers.length > 0) {
+        varDecl.modifiers = modifiers;
+      }
+      return varDecl;
     }
+
+    this.pos = start;
+    return this.parseStatement();
   }
 
+  parseVariableDeclaration() {
+    const startPos = this.pos;
+    const isFinal = this.match("final");
+    const type = this.current();
+    
+    if (!["int", "String", "boolean", "double", "float", "char", "byte", "short", "long"].includes(type)) {
+      return null;
+    }
+    this.next();
+    
+    const declarations = [];
+    let name = this.current();
+    this.next();
+    
+    let value = null;
+    if (this.match("=")) {
+      value = this.parseExpression();
+    }
+    
+    declarations.push({ name, value });
+    
+    // Handle multiple variables declared together 
+    while (this.match(",")) {
+      name = this.current();
+      this.next();
+      value = null;
+      if (this.match("=")) {
+        value = this.parseExpression();
+      }
+      declarations.push({ name, value });
+    }
+    
+    this.match(";");
+    
+    return {
+      type: "VariableDeclaration",
+      kind: isFinal ? "final" : "typed",
+      dataType: type,
+      declarations
+    };
+  }
+
+  parseExpression() {
+    const tokens = [];
+    while (![",", ";", ")", "}", "]"].includes(this.current())) {
+      if (this.pos >= this.tokens.length) break;
+      tokens.push(this.current());
+      this.next();
+    }
+    return tokens.length > 0 ? tokens.join(" ") : null;
+  }
+  
+
   parseStatement() {
-    if (this.match("if")) {
-      const test = this.parseParens();
+    const varDecl = this.parseVariableDeclaration();
+    if (varDecl) return varDecl;
+
+     if (this.match("if")) {
+      const test = this.parseCondition();
       const consequent = this.parseBlock();
-      return { type: "IfStatement", test, consequent };
+      let alternate = null;
+      if (this.match("else")) {
+        if (this.current() === "if") {
+          alternate = this.parseStatement();
+        } else {
+          alternate = this.parseBlock();
+        }
+      }
+      return { type: "IfStatement", test, consequent, alternate };
     }
     if (this.match("for")) {
-      const test = this.parseParens();
+      const test = this.parseCondition();
       const body = this.parseBlock();
       return { type: "ForStatement", test, body };
     }
     if (this.match("while")) {
-      const test = this.parseParens();
+      const test = this.parseCondition();
       const body = this.parseBlock();
       return { type: "WhileStatement", test, body };
     }
     if (this.match("return")) {
-      const value = this.current();
-      this.next();
+      let value = null;
+      if (![";", "}"].includes(this.current())) {
+        value = this.parseExpression();
+      }
       this.match(";");
       return { type: "ReturnStatement", value };
     }
     if (this.match("{")) {
       return this.parseBlock();
     }
-    const value = this.current();
-    this.next();
-    return { type: "ExpressionStatement", value };
+
+    const expression = this.parseExpression();
+    this.match(";");
+    return expression ? { type: "ExpressionStatement", expression } : null;
   }
 
   parseBlock() {
@@ -153,7 +253,7 @@ class Parser {
     return { type: "BlockStatement", body };
   }
 
-  parseParens() {
+  parseCondition() {
     const tokens = [];
     if (!this.match("(")) return null;
     while (!this.match(")")) {
@@ -186,6 +286,7 @@ function extractFeatures(ast) {
     num_package: 0,
     num_expressions: 0,
     num_statements: 0,
+    num_var_declarations: 0,
     total_method_lengths: 0,
     max_depth: 0
   };
@@ -257,5 +358,6 @@ function extractFeatures(ast) {
 
 module.exports = {
   parseJavaFile,
-  extractFeatures
+  extractFeatures,
+  tokenize
 };
