@@ -78,12 +78,6 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     const ast2 = parseJavaFile(suspectPath);
     const f1 = extractFeatures(ast1);
     const f2 = extractFeatures(ast2);
-
-    // Normalize features to ensure consistent vector length
-    /*const normalizedF1 = normalizeFeatures(f1);
-    const normalizedF2 = normalizeFeatures(f2);
-    
-    const vector = [...normalizedF1, ...normalizedF2];*/
     
     // Calculate similarity features using the same method as training
     const allKeys = Object.keys({...f1, ...f2});

@@ -36,7 +36,7 @@ class Parser {
 
   match(...expected) {
     const token = this.current();
-    console.log(`Matching against: ${expected}, current token: ${token}`);
+    //console.log(`Matching against: ${expected}, current token: ${token}`);
     if (expected.includes(token)) {
       this.next();
       return true;
@@ -102,7 +102,7 @@ class Parser {
   parseMethodOrField() {
     const start = this.pos;
     const modifiers = [];
-    console.log(`Starting to parse method or field`);
+    //console.log(`Starting to parse method or field`);
     
     // Collect modifiers
     while (this.match("public", "private", "protected", "static", "final", "synchronized", "volatile", "transient")) {
@@ -153,7 +153,7 @@ class Parser {
           params.push({ type: paramType, name: paramName });
           this.match(",");
         }
-        console.log(params);
+        //console.log(params);
         
         // Handle throws clause
         if (this.match("throws")) {
@@ -193,7 +193,7 @@ class Parser {
   }
 
   parseVariableDeclaration() {
-    console.log("starting parsing variable declaration");
+    //console.log("starting parsing variable declaration");
     const startPos = this.pos;
     
     const modifiers = [];
@@ -277,7 +277,7 @@ class Parser {
   
 
   parseStatement() {
-    console.log("startin parsing statement");
+    //console.log("startin parsing statement");
     
     if(this.match("System")){
       let value = this.parseSystemCall();
@@ -345,7 +345,7 @@ class Parser {
   }
 
   parseBlock() {
-    console.log(`Starting to parse block`);
+    //console.log(`Starting to parse block`);
     const body = [];
     while (!this.match("}")) {
       if (this.pos >= this.tokens.length) break;
@@ -361,7 +361,7 @@ class Parser {
   }
 
   parseCondition() {
-    console.log("starting parsing condition");
+    //console.log("starting parsing condition");
     const tokens = [];
     if (!this.match("(")) return null;
     while (!this.match(")")) {
