@@ -2,85 +2,174 @@
   "type": "Program",
   "body": [
     {
+      "type": "PackageDeclaration",
+      "value": "acsse.csc2a.file"
+    },
+    {
+      "type": "ImportDeclaration",
+      "value": "java.util.regex.Matcher"
+    },
+    {
+      "type": "ImportDeclaration",
+      "value": "java.util.regex.Pattern"
+    },
+    {
+      "type": "ImportDeclaration",
+      "value": "acsse.csc2a.model.Ship"
+    },
+    {
+      "type": "ImportDeclaration",
+      "value": "java.io.File"
+    },
+    {
+      "type": "ImportDeclaration",
+      "value": "java.io.FileNotFoundException"
+    },
+    {
+      "type": "ImportDeclaration",
+      "value": "java.util.Scanner"
+    },
+    {
       "type": "ClassDeclaration",
-      "name": "T4",
+      "name": "FileHandler",
       "body": [
+        {
+          "type": "VariableDeclaration",
+          "kind": "typed",
+          "dataType": "Ship[]",
+          "declarations": [
+            {
+              "name": "arrShip",
+              "value": null
+            }
+          ],
+          "modifiers": [
+            "private"
+          ]
+        },
         {
           "type": "MethodDeclaration",
           "modifiers": [
-            "public",
-            "static"
+            "public"
           ],
-          "returnType": "void",
-          "name": "main",
+          "returnType": "Ship[]",
+          "name": "readFile",
           "params": [
             {
-              "type": "String[]",
-              "name": "args"
+              "type": "String",
+              "name": "Filename"
             }
           ],
           "body": {
             "type": "BlockStatement",
             "body": [
               {
-                "type": "IfStatement",
-                "test": {
-                  "type": "Condition",
-                  "tokens": [
-                    "one",
-                    ">",
-                    "two"
-                  ]
-                },
-                "consequent": {
-                  "type": "BlockStatement",
-                  "body": [
-                    {
-                      "type": "SystemCall",
-                      "value": ".out.println(miles+\"\\t\\t\"+miles*1.609)"
-                    }
-                  ]
-                },
-                "alternate": null
+                "type": "ExpressionStatement",
+                "expression": "File textfile = new File ( Filename"
               },
               {
-                "type": "VariableDeclaration",
-                "kind": "typed",
-                "dataType": "int",
-                "declarations": [
+                "type": "ExpressionStatement",
+                "expression": "( Scanner textin = new Scanner ( textfile"
+              },
+              {
+                "type": "BlockStatement",
+                "body": [
                   {
-                    "name": "miles",
-                    "value": "1"
-                  }
-                ],
-                "modifiers": []
-              },
-              {
-                "type": "WhileStatement",
-                "test": {
-                  "type": "Condition",
-                  "tokens": [
-                    "miles",
-                    "<=",
-                    "10"
-                  ]
-                },
-                "body": {
-                  "type": "BlockStatement",
-                  "body": [
-                    {
-                      "type": "SystemCall",
-                      "value": ".out.println(miles+\"\\t\\t\"+miles*1.609)"
+                    "type": "VariableDeclaration",
+                    "kind": "typed",
+                    "dataType": "int",
+                    "declarations": [
+                      {
+                        "name": "n",
+                        "value": "0"
+                      }
+                    ],
+                    "modifiers": []
+                  },
+                  {
+                    "type": "WhileStatement",
+                    "test": {
+                      "type": "Condition",
+                      "tokens": [
+                        "textin",
+                        ".",
+                        "hasNext",
+                        "("
+                      ]
                     },
-                    {
-                      "type": "ExpressionStatement",
-                      "expression": "miles ++"
-                    }
-                  ]
-                }
+                    "body": null
+                  },
+                  {
+                    "type": "BlockStatement",
+                    "body": [
+                      {
+                        "type": "ExpressionStatement",
+                        "expression": "String line = textin . nextLine ("
+                      },
+                      {
+                        "type": "ExpressionStatement",
+                        "expression": "ShipPattern = Pattern . compile ( \"(^[SH]\\\\d{4})[a-zA-Z]\""
+                      },
+                      {
+                        "type": "ExpressionStatement",
+                        "expression": "shipMatcher = ShipPattern . matcher ( line"
+                      },
+                      {
+                        "type": "ExpressionStatement",
+                        "expression": "( shipMatcher . matches ("
+                      },
+                      {
+                        "type": "BlockStatement",
+                        "body": [
+                          {
+                            "type": "SystemCall",
+                            "value": ".out.println(line+\"matches\")"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ExpressionStatement",
+                        "expression": "else { n = n + 1"
+                      },
+                      {
+                        "type": "SystemCall",
+                        "value": ".out.println(\"hh\"+n)"
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
+        },
+        {
+          "type": "ExpressionStatement",
+          "expression": "catch ( FileNotFoundException ex"
+        },
+        {
+          "type": "BlockStatement",
+          "body": [
+            {
+              "type": "ExpressionStatement",
+              "expression": "ex . printStackTrace ("
+            },
+            {
+              "type": "VariableDeclaration",
+              "kind": "typed",
+              "dataType": "Ship[]",
+              "declarations": [
+                {
+                  "name": "aryShip",
+                  "value": "null"
+                }
+              ],
+              "modifiers": []
+            },
+            {
+              "type": "ReturnStatement",
+              "value": "aryShip"
+            }
+          ]
         }
       ]
     }

@@ -89,7 +89,11 @@ class Parser {
     while (!this.match("}")) {
       if (this.pos >= this.tokens.length) break;
       const member = this.parseMethodOrField();
-      if (member) classNode.body.push(member);
+      if (member){
+        classNode.body.push(member);
+      }else{
+        this.next();
+      }
     }
 
     return classNode;
@@ -99,34 +103,59 @@ class Parser {
     const start = this.pos;
     const modifiers = [];
     console.log(`Starting to parse method or field`);
-    //collect modifiers
+    
+    // Collect modifiers
     while (this.match("public", "private", "protected", "static", "final", "synchronized", "volatile", "transient")) {
       modifiers.push(this.tokens[this.pos - 1]);
     }
-    //if it is a method
-    if (this.match("void", "int", "String", "boolean", "double", "float", "char", "byte", "short", "long")) {
-      const returnType = this.tokens[this.pos - 1];
+    
+    const currentToken = this.current();
+    const isPrimitiveType = ["void", "int", "String", "boolean", "double", "float", "char", "byte", "short", "long"].includes(currentToken);
+    const isClassType = /^[A-Z][a-zA-Z0-9_]*(\[\])*$/.test(currentToken);
+    const isGenericType = /^[A-Z][a-zA-Z0-9_]*<.*>(\[\])*$/.test(currentToken);
+    
+    if (isPrimitiveType || isClassType || isGenericType) {
+      let returnType = currentToken;
+      this.next();
+        
+      // Handle generic types 
+      if (currentToken.includes("<") && !currentToken.includes(">")) {
+        while (this.current() && !this.current().includes(">")) {
+          returnType += this.current();
+          this.next();
+        }
+        if (this.current() && this.current().includes(">")) {
+          returnType += this.current();
+          this.next();
+        }
+      }
+      
       const name = this.current();
       this.next();
 
-      if (this.match("(")){
+      if (this.match("(")) {
         const params = [];
         while (!this.match(")")) {
           console.log(`Starting to parse parameters`);
           if (this.pos >= this.tokens.length) break;
-          const paramType = this.current();
-          if (["final"].includes(paramType)) {
+          
+          if (["final"].includes(this.current())) {
             this.next();
-            continue;
           }
+          
+          const paramType = this.current();
           this.next();
+          
+
+          
           const paramName = this.current();
           this.next();
           params.push({ type: paramType, name: paramName });
           this.match(",");
         }
         console.log(params);
-        // if method throws exception
+        
+        // Handle throws clause
         if (this.match("throws")) {
           while (this.current() !== "{" && this.pos < this.tokens.length) {
             this.next();
@@ -135,7 +164,7 @@ class Parser {
         
         if (!this.match("{")) return null;
         const body = this.parseBlock();
-        //console.log(body);
+        
         return {
           type: "MethodDeclaration",
           modifiers,
@@ -145,9 +174,12 @@ class Parser {
           body
         };
       }
-    }  
-    //if is field declaration
-    this.pos = start;
+      
+
+      this.pos = start;
+    }
+    
+    // Parse as variable declaration
     const varDecl = this.parseVariableDeclaration();
     if (varDecl) {
       if (modifiers.length > 0) {
@@ -161,7 +193,7 @@ class Parser {
   }
 
   parseVariableDeclaration() {
-    console.log("starting parsing variable declaraton");
+    console.log("starting parsing variable declaration");
     const startPos = this.pos;
     
     const modifiers = [];
@@ -171,11 +203,27 @@ class Parser {
     
     const type = this.current();
     
-    if (!["int", "String", "boolean", "double", "float", "char", "byte", "short", "long"].includes(type)) {
+    const isPrimitiveType = ["int", "String", "boolean", "double", "float", "char", "byte", "short", "long"].includes(type);
+    const isClassType = /^[A-Z][a-zA-Z0-9_]*(\[\])*$/.test(type); 
+    const isGenericType = /^[A-Z][a-zA-Z0-9_]*<.*>(\[\])*$/.test(type); 
+    
+    if (!isPrimitiveType && !isClassType && !isGenericType) {
       this.pos = startPos;
       return null;
     }
+    let fullType = type;
     this.next();
+
+    if (type.includes("<") && !type.includes(">")) {
+      while (this.current() && !this.current().includes(">")) {
+        fullType += this.current();
+        this.next();
+      }
+      if (this.current() && this.current().includes(">")) {
+        fullType += this.current();
+        this.next();
+      }
+    }
     
     const declarations = [];
     let name = this.current();
@@ -211,7 +259,7 @@ class Parser {
     return {
       type: "VariableDeclaration",
       kind: modifiers.includes("final") ? "final" : "typed",
-      dataType: type,
+      dataType: fullType,
       declarations,
       modifiers
     };
