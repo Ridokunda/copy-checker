@@ -5,7 +5,10 @@ const fs = require("fs");
 
 // --- Tokenizer ---
 function tokenize(code) {
-  const tokenPattern = /\b(package|import|class|public|private|protected|void|int|final|boolean|char|byte|short|long|float|double|String|if|for|while|static|return|try|catch|new|throws|throw)\b|\{|\}|\(|\)|\.|;|\[|\]|,|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[a-zA-Z_][a-zA-Z0-9_]*|\S/g;
+  code = code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
+
+  const tokenPattern = /\b(package|import|class|public|private|protected|void|int|final|boolean|char|byte|short|long|float|double|String|if|for|while|static|return|try|catch|new|throws|throw)\b(?:\[\])*|(\w+(?:\[\])*)|(\d+\.\d+)|(\+\+|--|<=|>=|==|!=)|(?:"(?:\\.|[^"\\])*")|(?:'(?:\\.|[^'\\])*')|\{|\}|\(|\)|\.|;|,|[a-zA-Z_][a-zA-Z0-9_]*|\S/g;
+
   const tokens = [];
   let match;
   while ((match = tokenPattern.exec(code)) !== null) {
@@ -13,6 +16,7 @@ function tokenize(code) {
   }
   return tokens;
 }
+
 
 // --- Parser Class ---
 class Parser {
@@ -41,7 +45,7 @@ class Parser {
 
   parse() {
     const ast = { type: "Program", body: [] };
-
+    console.log(`Starting parse at position ${this.pos}`);
     while (this.match("package", "import")) {
       const keyword = this.tokens[this.pos - 1];
       const value = this.parseQualifiedName();
@@ -49,7 +53,7 @@ class Parser {
         ast.body.push({ type: keyword === "package" ? "PackageDeclaration" : "ImportDeclaration", value });
       }
     }
-
+    console.log(`starting to parse class`);
     while (this.pos < this.tokens.length) {
       const classNode = this.parseClass();
       if (classNode) ast.body.push(classNode);
@@ -93,7 +97,7 @@ class Parser {
   parseMethodOrField() {
     const start = this.pos;
     const modifiers = [];
-
+    console.log(`Starting to parse method or field`);
     //collect modifiers
     while (this.match("public", "private", "protected", "static", "final", "synchronized", "volatile", "transient")) {
       modifiers.push(this.tokens[this.pos - 1]);
@@ -107,6 +111,7 @@ class Parser {
       if (this.match("(")){
         const params = [];
         while (!this.match(")")) {
+          console.log(`Starting to parse parameters`);
           if (this.pos >= this.tokens.length) break;
           const paramType = this.current();
           if (["final"].includes(paramType)) {
@@ -119,7 +124,7 @@ class Parser {
           params.push({ type: paramType, name: paramName });
           this.match(",");
         }
-
+        console.log(params);
         if (!this.match("{")) return null;
         const body = this.parseBlock();
         return {
@@ -244,6 +249,7 @@ class Parser {
   }
 
   parseBlock() {
+    console.log(`Starting to parse block`);
     const body = [];
     while (!this.match("}")) {
       if (this.pos >= this.tokens.length) break;
