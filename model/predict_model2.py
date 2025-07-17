@@ -3,14 +3,13 @@ import json
 import joblib
 from collections import Counter
 
-# Load trained Random‑Forest model (list of decision trees stored via joblib)
-model = joblib.load("model.pkl")  # list[dict]
+
+model = joblib.load("model.pkl")  
 with open("feature_keys.json", "r") as f:
     feature_keys = json.load(f)
 feature_names = feature_keys["similarity_keys"]
 
 def predict_single(tree, row):
-    #Traverse a single decision‑tree dictionary and return its class label.
     while isinstance(tree, dict):
         if row[tree["index"]] < tree["value"]:
             tree = tree["left"]
@@ -28,7 +27,7 @@ def forest_predict(trees, row):
     prob0 = counts.get(0, 0) / total
     prob1 = counts.get(1, 0) / total
     prediction = 1 if prob1 >= prob0 else 0
-    # Get top 3 influential features
+    
     influential = []
     for tree in trees:
         node = tree

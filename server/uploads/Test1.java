@@ -20,12 +20,14 @@ public class FileHandler {
 		try(Scanner textin = new Scanner(textfile))
 		{
 			int n = 0;
+			int x = 0;
+			int y = 0;
+			int z = 0;
+			int q = 0;
 			while(textin.hasNext())
 			{
 				
-				String line = textin.nextLine();
-				Pattern ShipPattern = Pattern.compile("(^[SH]\\d{4})[a-zA-Z]");
-				Matcher shipMatcher = ShipPattern.matcher(line);
+			
 				if (shipMatcher.matches())
 				{
 					System.out.println(line + "matches");
