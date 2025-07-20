@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const { parseJavaFile, extractFeatures } = require('./logic/JavaParser2.js');
 
-const filePath = path.join(__dirname, './uploads/Test1.java');
+const filePath = path.join(__dirname, './uploads/T05.java');
 const outputPath = path.join(__dirname, './output/result.json');
 
 // Parse the Java file

@@ -54,7 +54,7 @@ class Parser {
         ast.body.push({ type: keyword === "package" ? "PackageDeclaration" : "ImportDeclaration", value });
       }
     }
-    console.log(`starting to parse class`);
+    //console.log(`starting to parse class`);
     while (this.pos < this.tokens.length) {
       const classNode = this.parseClass();
       if (classNode) ast.body.push(classNode);
@@ -246,7 +246,7 @@ class Parser {
       this.next();
       value = null;
       if (this.match("=")) {
-        value = this.parseExpression();
+        value = this.parseAssignedValue();
       }
       declarations.push({ name, value });
     }
@@ -264,10 +264,19 @@ class Parser {
       modifiers
     };
   }
+  parseAssignedValue(){
+    const tokens = [];
+    while (![";"].includes(this.current())) {
+      if (this.pos >= this.tokens.length) break;
+      tokens.push(this.current());
+      this.next();
+    }
+    return tokens.length > 0 ? tokens.join(" ") : null;
+  }
 
   parseExpression() {
     const tokens = [];
-    while (![",", ";", ")", "}", "]"].includes(this.current())) {
+    while (![",", ";", "}", "]"].includes(this.current())) {
       if (this.pos >= this.tokens.length) break;
       tokens.push(this.current());
       this.next();
@@ -282,6 +291,10 @@ class Parser {
     if(this.match("System")){
       let value = this.parseSystemCall();
       return {type: "SystemCall", value};
+    }
+    if(this.match("java")){
+      let value = this.parseJavaCall();
+      return {type: "JavaCall", value};
     }
     if (this.match("if")) {
       const test = this.parseCondition();
@@ -343,6 +356,14 @@ class Parser {
     }
     return value.join("");
   }
+  parseJavaCall(){
+    let value = []
+    while(!this.match(";")){
+      value.push(this.current());
+      this.next();
+    }
+    return value.join("");
+  }
 
   parseBlock() {
     //console.log(`Starting to parse block`);
@@ -394,6 +415,9 @@ function extractFeatures(ast) {
     num_package: 0,
     num_expressions: 0,
     num_statements: 0,
+    num_systemcall: 0,
+    num_javacall: 0,
+    num_variables: 0,
     num_var_declarations: 0,
     total_method_lengths: 0,
     max_depth: 0
@@ -421,6 +445,9 @@ function extractFeatures(ast) {
       case "WhileStatement": stats.num_while++; stats.num_statements++; break;
       case "ReturnStatement": stats.num_return++; stats.num_statements++; break;
       case "ImportDeclaration": stats.num_imports++; break;
+      case "SystemCall": stats.num_systemcall++; break;
+      case "JavaCall": stats.num_javacall++; break;
+      case "VariableDeclaration": stats.num_variables++; break;
       case "PackageDeclaration": stats.num_package++; break;
       case "ExpressionStatement": stats.num_expressions++; stats.num_statements++; break;
     }
@@ -437,7 +464,7 @@ function extractFeatures(ast) {
   delete stats.total_method_lengths;
 
   // --- n-gram extraction ---
-  function generateNGrams(seq, n) {
+  /*function generateNGrams(seq, n) {
     const grams = {};
     for (let i = 0; i <= seq.length - n; i++) {
       const gram = seq.slice(i, i + n).join('_');
@@ -458,7 +485,7 @@ function extractFeatures(ast) {
 
   const ngrams2 = topKGrams(generateNGrams(sequence, 2), 10);
   const ngrams3 = topKGrams(generateNGrams(sequence, 3), 10);
-  Object.assign(stats, ngrams2, ngrams3);
+  Object.assign(stats, ngrams2, ngrams3);*/
 
   return stats;
 }

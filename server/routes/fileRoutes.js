@@ -3,68 +3,10 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const { parseJavaFile, extractFeatures, tokenize, Parser } = require('../logic/JavaParser2.js');
+const { parseJavaFile, extractFeatures } = require('../logic/JavaParser2.js');
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
-
-// Load the feature keys used during training
-let FEATURE_KEYS = null;
-try {
-  FEATURE_KEYS = JSON.parse(fs.readFileSync('./feature_keys.json', 'utf-8'));
-  console.log(`Loaded ${FEATURE_KEYS.length} feature keys for consistent vectorization`);
-} catch (err) {
-  console.error('Warning: Could not load feature_keys.json. Using dynamic feature extraction.');
-}
-
-
-function calculateSimilarityFeatures(f1, f2, keys) {
-    const similarities = {};
-    
-    // Convert to vectors first
-    const v1 = keys.map(k => f1[k] || 0);
-    const v2 = keys.map(k => f2[k] || 0);
-    
-    // 1. Cosine similarity
-    const dotProduct = v1.reduce((sum, val, i) => sum + val * v2[i], 0);
-    const norm1 = Math.sqrt(v1.reduce((sum, val) => sum + val * val, 0));
-    const norm2 = Math.sqrt(v2.reduce((sum, val) => sum + val * val, 0));
-    similarities.cosine_similarity = (norm1 * norm2) > 0 ? dotProduct / (norm1 * norm2) : 0;
-    
-    // 2. Euclidean distance (normalized)
-    const euclideanDist = Math.sqrt(v1.reduce((sum, val, i) => sum + Math.pow(val - v2[i], 2), 0));
-    const maxDist = Math.sqrt(keys.length * Math.max(...v1.concat(v2)) ** 2);
-    similarities.euclidean_similarity = maxDist > 0 ? 1 - (euclideanDist / maxDist) : 1;
-    
-    // 3. Manhattan distance (normalized)
-    const manhattanDist = v1.reduce((sum, val, i) => sum + Math.abs(val - v2[i]), 0);
-    const maxManhattan = keys.length * Math.max(...v1.concat(v2));
-    similarities.manhattan_similarity = maxManhattan > 0 ? 1 - (manhattanDist / maxManhattan) : 1;
-    
-    // 4. Jaccard similarity for binary features (presence/absence)
-    const binary1 = v1.map(x => x > 0 ? 1 : 0);
-    const binary2 = v2.map(x => x > 0 ? 1 : 0);
-    const intersection = binary1.reduce((sum, val, i) => sum + (val && binary2[i] ? 1 : 0), 0);
-    const union = binary1.reduce((sum, val, i) => sum + (val || binary2[i] ? 1 : 0), 0);
-    similarities.jaccard_similarity = union > 0 ? intersection / union : 0;
-    
-    // 5. Individual feature ratios and differences
-    keys.forEach(key => {
-        const val1 = f1[key] || 0;
-        const val2 = f2[key] || 0;
-        const maxVal = Math.max(val1, val2);
-        const minVal = Math.min(val1, val2);
-        
-        // Ratio similarity (how similar are the values)
-        similarities[`ratio_${key}`] = maxVal > 0 ? minVal / maxVal : 1;
-        
-        // Absolute difference (normalized)
-        const maxPossible = Math.max(val1, val2, 1); // Avoid division by zero
-        similarities[`diff_${key}`] = 1 - (Math.abs(val1 - val2) / maxPossible);
-    });
-    
-    return similarities;
-}
 
 router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }]), async (req, res) => {
   try {
@@ -73,21 +15,13 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
 
     console.log('Parsing files:', originalPath, suspectPath);
 
-    // Parse and extract features
     const ast1 = parseJavaFile(originalPath);
     const ast2 = parseJavaFile(suspectPath);
     const f1 = extractFeatures(ast1);
     const f2 = extractFeatures(ast2);
     
-    // Calculate similarity features using the same method as training
-    const allKeys = Object.keys({...f1, ...f2});
-    const similarityFeatures = calculateSimilarityFeatures(f1, f2, allKeys);
-    
-    // Convert to array in same order as training
-    const featureVector = FEATURE_KEYS?.similarity_keys?.map(k => similarityFeatures[k] || 0) || 
-                         Object.values(similarityFeatures);
+    const featureVector = [...Object.values(f1), ...Object.values(f2)];
 
-    // Call Python script
     const py = spawn('python', ['model/predict_model2.py']);
     let output = '';
     let errorOutput = '';
@@ -115,7 +49,6 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
         console.log('Python output:', output);
         const result = JSON.parse(output);
         
-        // Clean up uploaded files
         fs.unlinkSync(originalPath);
         fs.unlinkSync(suspectPath);
         
@@ -132,7 +65,5 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     res.status(500).json({ success: false, error: 'Server error: ' + err.message });
   }
 });
-
-
 
 module.exports = router;
