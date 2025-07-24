@@ -116,11 +116,28 @@ joblib.dump(forest, "model.pkl")
 print("Model saved to model.pkl")
 
 
-# Evaluate
-correct = 0
+# Evaluate with Precision and Recall
+TP = FP = FN = TN = 0
+
 for row, label in test_set:
     prediction = bagging_predict(forest, row)
-    correct += prediction == label
+    
+    if prediction == 1 and label == 1:
+        TP += 1
+    elif prediction == 1 and label == 0:
+        FP += 1
+    elif prediction == 0 and label == 1:
+        FN += 1
+    elif prediction == 0 and label == 0:
+        TN += 1
 
-accuracy = correct / len(test_set)
+accuracy = (TP + TN) / len(test_set)
+precision = TP / (TP + FP) if (TP + FP) > 0 else 0
+recall = TP / (TP + FN) if (TP + FN) > 0 else 0
+f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+
 print(f"Accuracy: {accuracy:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall: {recall:.4f}")
+print(f"F1 Score: {f1:.4f}")
+
