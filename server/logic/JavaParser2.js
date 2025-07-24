@@ -334,6 +334,11 @@ class Parser {
     const varDecl = this.parseVariableDeclaration();
     if (varDecl) return varDecl;
 
+    if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(this.current()) && this.tokens[this.pos + 1] === "(") {
+      return this.parseMethodCall();
+    }
+
+
     const expression = this.parseExpression();
     this.match(";");
     return expression ? { type: "ExpressionStatement", expression } : null;
@@ -357,12 +362,33 @@ class Parser {
     return value.join("");
   }
   parseJavaCall(){
-    let value = []
+    let value = [];
     while(!this.match(";")){
       value.push(this.current());
       this.next();
     }
     return value.join("");
+  }
+  parseMethodCall(){
+    const name = this.current();
+    this.next();
+    let args = [];
+    if(this.match("(")){
+      while (this.current() !== ")" && this.pos < this.tokens.length) {
+        if (this.current() !== ",") {
+          args.push(this.current());
+        }
+        this.next();
+      }
+      this.match(")");
+    }
+    this.match(";");
+
+    return {
+      type: "MethodCall",
+      name,
+      arguments: args
+    };
   }
 
   parseBlock() {
@@ -419,6 +445,7 @@ function extractFeatures(ast) {
     num_javacall: 0,
     num_variables: 0,
     num_var_declarations: 0,
+    num_method_calls:0,
     total_method_lengths: 0,
     max_depth: 0
   };
@@ -445,11 +472,12 @@ function extractFeatures(ast) {
       case "WhileStatement": stats.num_while++; stats.num_statements++; break;
       case "ReturnStatement": stats.num_return++; stats.num_statements++; break;
       case "ImportDeclaration": stats.num_imports++; break;
-      case "SystemCall": stats.num_systemcall++; break;
-      case "JavaCall": stats.num_javacall++; break;
+      case "SystemCall": stats.num_systemcall++; stats.num_statements++; break;
+      case "JavaCall": stats.num_javacall++; stats.num_statements++; break;
       case "VariableDeclaration": stats.num_variables++; break;
       case "PackageDeclaration": stats.num_package++; break;
       case "ExpressionStatement": stats.num_expressions++; stats.num_statements++; break;
+      case "MethodCall": stats.num_method_calls++; stats.num_statements++; break;
     }
 
     for (const key in node) {

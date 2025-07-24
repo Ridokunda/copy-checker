@@ -1,0 +1,118 @@
+{
+  "type": "Program",
+  "body": [
+    {
+      "type": "ImportDeclaration",
+      "value": "java.util.Scanner"
+    },
+    {
+      "type": "ClassDeclaration",
+      "name": "T05",
+      "body": [
+        {
+          "type": "MethodDeclaration",
+          "modifiers": [
+            "public",
+            "static"
+          ],
+          "returnType": "void",
+          "name": "main",
+          "params": [
+            {
+              "type": "String[]",
+              "name": "args"
+            }
+          ],
+          "body": {
+            "type": "BlockStatement",
+            "body": [
+              {
+                "type": "VariableDeclaration",
+                "kind": "typed",
+                "dataType": "Scanner",
+                "declarations": [
+                  {
+                    "name": "sc",
+                    "value": "new Scanner ( System . in )"
+                  }
+                ],
+                "modifiers": []
+              },
+              {
+                "type": "SystemCall",
+                "value": ".out.print(\"Enter an integer: \")"
+              },
+              {
+                "type": "VariableDeclaration",
+                "kind": "typed",
+                "dataType": "int",
+                "declarations": [
+                  {
+                    "name": "number",
+                    "value": "sc . nextInt ( )"
+                  }
+                ],
+                "modifiers": []
+              },
+              {
+                "type": "MethodCall",
+                "name": "reverse",
+                "arguments": [
+                  "number"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "MethodDeclaration",
+          "modifiers": [
+            "public",
+            "static"
+          ],
+          "returnType": "void",
+          "name": "reverse",
+          "params": [
+            {
+              "type": "int",
+              "name": "number"
+            }
+          ],
+          "body": {
+            "type": "BlockStatement",
+            "body": [
+              {
+                "type": "WhileStatement",
+                "test": {
+                  "type": "Condition",
+                  "tokens": [
+                    "number",
+                    ">",
+                    "0"
+                  ]
+                },
+                "body": {
+                  "type": "BlockStatement",
+                  "body": [
+                    {
+                      "type": "SystemCall",
+                      "value": ".out.print(number%10)"
+                    },
+                    {
+                      "type": "ExpressionStatement",
+                      "expression": "number / = 10"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "SystemCall",
+                "value": ".out.println()"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

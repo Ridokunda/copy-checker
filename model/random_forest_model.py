@@ -132,9 +132,18 @@ for row, label in test_set:
         TN += 1
 
 accuracy = (TP + TN) / len(test_set)
-precision = TP / (TP + FP) if (TP + FP) > 0 else 0
-recall = TP / (TP + FN) if (TP + FN) > 0 else 0
-f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+if (TP + FP) > 0 :
+    precision = TP / (TP + FP)
+else:
+    precision = 0
+if (TP + FN) > 0:
+    recall = TP / (TP + FN) 
+else:
+    recall = 0
+if (precision + recall) > 0:
+    f1 = 2 * precision * recall / (precision + recall)
+else:
+    f1 = 0
 
 print(f"Accuracy: {accuracy:.4f}")
 print(f"Precision: {precision:.4f}")
