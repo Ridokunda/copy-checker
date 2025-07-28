@@ -3,6 +3,7 @@ import random
 import joblib
 from collections import Counter
 from math import log2
+import matplotlib.pyplot as plt
 
 # --- Load Dataset ---
 with open("dataset.json", "r") as f:
@@ -14,6 +15,7 @@ y = [item["label"] for item in dataset]
 
 
 # --- Decision Tree Implementation ---
+# calculate the score of a split
 def gini(groups, classes):
     total = sum(len(group) for group in groups)
     score = 0.0
@@ -30,7 +32,7 @@ def split(index, value, dataset):
     for row in dataset:
         (left if row[0][index] < value else right).append(row)
     return left, right
-
+# get the best feature and value to split the dataset
 def get_split(dataset):
     best_index, best_value, best_score, best_groups = 999, 999, 999, None
     for index in range(len(dataset[0][0])):
@@ -83,19 +85,21 @@ def subsample(dataset, ratio):
 def random_forest(train, max_depth, min_size, sample_size, n_trees):
     trees = []
     
-    
     for _ in range(n_trees):
         sample = subsample(train, sample_size)
         tree = build_tree(sample, max_depth, min_size)
         trees.append(tree)
-    
-    
     return trees
 
 
 def bagging_predict(trees, row):
     predictions = [predict(tree, row) for tree in trees]
     return max(set(predictions), key=predictions.count)
+
+def bagging_predict_proba(trees, row):
+    predictions = [predict(tree, row) for tree in trees]
+    positive_votes = predictions.count(1)
+    return positive_votes / len(trees)
 
 # --- Train & Evaluate ---
 dataset_combined = list(zip(X, y))
@@ -108,7 +112,7 @@ forest = random_forest(
     max_depth=15, 
     min_size=5, 
     sample_size=0.8, 
-    n_trees=60,
+    n_trees=100,
     )
 
 # Save the model
@@ -150,3 +154,60 @@ print(f"Precision: {precision:.4f}")
 print(f"Recall: {recall:.4f}")
 print(f"F1 Score: {f1:.4f}")
 
+# Confusion Matrix
+print("\nConfusion Matrix:")
+print(f"           Predicted")
+print(f"          0      1")
+print(f"Actual 0  {TN}   {FP}")
+print(f"Actual 1  {FN}   {TP}")
+
+# ROC Curve Calculation
+probs_labels = []
+for row, label in test_set:
+    prob = bagging_predict_proba(forest, row)
+    probs_labels.append((prob, label))
+
+# Sort by probability descending
+probs_labels.sort(key=lambda x: x[0], reverse=True)
+
+thresholds = [i / 100 for i in range(100, -1, -1)]
+roc_points = []
+
+P = sum(1 for _, label in probs_labels if label == 1)
+N = sum(1 for _, label in probs_labels if label == 0)
+
+for thresh in thresholds:
+    TP = FP = 0
+    for prob, label in probs_labels:
+        if prob >= thresh:
+            if label == 1:
+                TP += 1
+            else:
+                FP += 1
+    TPR = TP / P if P > 0 else 0
+    FPR = FP / N if N > 0 else 0
+    roc_points.append((FPR, TPR))
+
+# AUC Calculation
+auc = 0
+for i in range(1, len(roc_points)):
+    x1, y1 = roc_points[i - 1]
+    x2, y2 = roc_points[i]
+    auc += (x2 - x1) * (y1 + y2) / 2
+
+print(f"\nAUC: {auc:.4f}")
+
+
+# Plot ROC Curve 
+fprs = [p[0] for p in roc_points]
+tprs = [p[1] for p in roc_points]
+
+plt.figure(figsize=(6, 6))
+plt.plot(fprs, tprs, marker='.', color='blue', label=f'ROC Curve (AUC={auc:.4f})')
+plt.xlabel('False Positive Rate (FPR)')
+plt.ylabel('True Positive Rate (TPR)')
+plt.title('ROC Curve')
+plt.legend()
+
+plt.savefig("roc_curve.png") 
+plt.show()
