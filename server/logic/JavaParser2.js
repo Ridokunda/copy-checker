@@ -7,7 +7,7 @@ const fs = require("fs");
 function tokenize(code) {
   code = code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
 
-  const tokenPattern = /\b(package|import|class|public|private|protected|void|int|final|boolean|char|byte|short|long|float|double|String|if|for|while|static|return|try|catch|new|throws|throw)\b(?:\[\])*|(\w+(?:\[\])*)|(\d+\.\d+)|(\+\+|--|<=|>=|==|!=)|(?:"(?:\\.|[^"\\])*")|(?:'(?:\\.|[^'\\])*')|\{|\}|\(|\)|\.|;|,|[a-zA-Z_][a-zA-Z0-9_]*|\S/g;
+  const tokenPattern = /\b(package|import|class|public|private|protected|void|int|final|boolean|char|byte|short|long|float|double|String|if|for|while|static|return|try|catch|new|throws|throw)\b(?:\[\])*|(\w+(?:\[\])*)|(\d+\.\d+)|(\+\+|--|<=|>=|==|!=)|(?:"(?:\\.|[^"\\])*")|(?:'(?:\\.|[^'\\])*')|\{|\}|\(|\)|\.|;|,|[a-zA-Z_][a-zA-Z0-9_]*(?:\[\])*|\S/g;
 
   const tokens = [];
   let match;
@@ -110,7 +110,7 @@ class Parser {
     }
     
     const currentToken = this.current();
-    const isPrimitiveType = ["void", "int", "String", "boolean", "double", "float", "char", "byte", "short", "long"].includes(currentToken);
+    const isPrimitiveType = ["void","int", "String", "boolean", "double", "float", "char", "byte", "short", "long"].includes(currentToken);
     const isClassType = /^[A-Z][a-zA-Z0-9_]*(\[\])*$/.test(currentToken);
     const isGenericType = /^[A-Z][a-zA-Z0-9_]*<.*>(\[\])*$/.test(currentToken);
     
@@ -203,7 +203,9 @@ class Parser {
     
     const type = this.current();
     
-    const isPrimitiveType = ["int", "String", "boolean", "double", "float", "char", "byte", "short", "long"].includes(type);
+    const isPrimitiveType = ["int[][]", "String[][]", "boolean[][]", "double[][]", "float[][]", "char[][]", "byte[][]", "short[][]", "long[][]",
+                              "int[]", "String[]", "boolean[]", "double[]", "float[]", "char[]", "byte[]", "short[]", "long[]",
+                             "int", "String", "boolean", "double", "float", "char", "byte", "short", "long"].includes(type);
     const isClassType = /^[A-Z][a-zA-Z0-9_]*(\[\])*$/.test(type); 
     const isGenericType = /^[A-Z][a-zA-Z0-9_]*<.*>(\[\])*$/.test(type); 
     
@@ -235,9 +237,9 @@ class Parser {
     
     let value = null;
     if (this.match("=")) {
-      value = this.parseExpression();
+      value = this.parseAssignedValue();
     }
-    
+    console.log(this.current());
     declarations.push({ name, value });
     
     // Handle multiple variables declared together 
@@ -252,6 +254,7 @@ class Parser {
     }
     
     if (!this.match(";")) {
+      console.log("failde");
       this.pos = startPos;
       return null;
     }
@@ -326,6 +329,15 @@ class Parser {
       }
       this.match(";");
       return { type: "ReturnStatement", value };
+    }
+    if(this.match("try")){
+      const test = this.parseCondition();
+      const body = this.parseStatementOrBlock();
+      let alt = null
+      if(this.match("catch")){
+        alt = this.parseStatement();
+      }
+      return {type: "tryStatement", test, body, alt};
     }
     if (this.match("{")) {
       return this.parseBlock();
@@ -416,6 +428,7 @@ class Parser {
       tokens.push(this.current());
       this.next();
     }
+    this.match(")");
     return { type: "Condition", tokens };
   }
 }

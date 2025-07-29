@@ -7,7 +7,7 @@
     },
     {
       "type": "ClassDeclaration",
-      "name": "T05",
+      "name": "T7",
       "body": [
         {
           "type": "MethodDeclaration",
@@ -32,7 +32,7 @@
                 "dataType": "Scanner",
                 "declarations": [
                   {
-                    "name": "sc",
+                    "name": "input",
                     "value": "new Scanner ( System . in )"
                   }
                 ],
@@ -40,26 +40,73 @@
               },
               {
                 "type": "SystemCall",
-                "value": ".out.print(\"Enter an integer: \")"
+                "value": ".out.print(\"Enter a 4 by 4 matrix row by row: \")"
               },
               {
                 "type": "VariableDeclaration",
                 "kind": "typed",
-                "dataType": "int",
+                "dataType": "double[][]",
                 "declarations": [
                   {
-                    "name": "number",
-                    "value": "sc . nextInt ( )"
+                    "name": "m",
+                    "value": "new double [ 4 ] [ 4 ]"
                   }
                 ],
                 "modifiers": []
               },
               {
-                "type": "MethodCall",
-                "name": "reverse",
-                "arguments": [
-                  "number"
-                ]
+                "type": "ForStatement",
+                "test": {
+                  "type": "Condition",
+                  "tokens": [
+                    "int",
+                    "i",
+                    "=",
+                    "0",
+                    ";",
+                    "i",
+                    "<",
+                    "4",
+                    ";",
+                    "i",
+                    "++"
+                  ]
+                },
+                "body": {
+                  "type": "ForStatement",
+                  "test": {
+                    "type": "Condition",
+                    "tokens": [
+                      "int",
+                      "j",
+                      "=",
+                      "0",
+                      ";",
+                      "j",
+                      "<",
+                      "4",
+                      ";",
+                      "j",
+                      "++"
+                    ]
+                  },
+                  "body": {
+                    "type": "ExpressionStatement",
+                    "expression": "m [ i"
+                  }
+                }
+              },
+              {
+                "type": "ExpressionStatement",
+                "expression": "[ j"
+              },
+              {
+                "type": "ExpressionStatement",
+                "expression": "= input . nextDouble ( )"
+              },
+              {
+                "type": "SystemCall",
+                "value": ".out.print(\"Sum of the elements in the major diagonal is \"+sumMajorDiagonal(m))"
               }
             ]
           }
@@ -70,44 +117,61 @@
             "public",
             "static"
           ],
-          "returnType": "void",
-          "name": "reverse",
+          "returnType": "double",
+          "name": "sumMajorDiagonal",
           "params": [
             {
-              "type": "int",
-              "name": "number"
+              "type": "double[][]",
+              "name": "m"
             }
           ],
           "body": {
             "type": "BlockStatement",
             "body": [
               {
-                "type": "WhileStatement",
+                "type": "VariableDeclaration",
+                "kind": "typed",
+                "dataType": "double",
+                "declarations": [
+                  {
+                    "name": "sum",
+                    "value": "0"
+                  }
+                ],
+                "modifiers": []
+              },
+              {
+                "type": "ForStatement",
                 "test": {
                   "type": "Condition",
                   "tokens": [
-                    "number",
-                    ">",
-                    "0"
+                    "int",
+                    "i",
+                    "=",
+                    "0",
+                    ";",
+                    "i",
+                    "<",
+                    "m",
+                    ".",
+                    "length",
+                    ";",
+                    "i",
+                    "++"
                   ]
                 },
                 "body": {
-                  "type": "BlockStatement",
-                  "body": [
-                    {
-                      "type": "SystemCall",
-                      "value": ".out.print(number%10)"
-                    },
-                    {
-                      "type": "ExpressionStatement",
-                      "expression": "number / = 10"
-                    }
-                  ]
+                  "type": "ExpressionStatement",
+                  "expression": "sum + = m [ i"
                 }
               },
               {
-                "type": "SystemCall",
-                "value": ".out.println()"
+                "type": "ExpressionStatement",
+                "expression": "[ i"
+              },
+              {
+                "type": "ExpressionStatement",
+                "expression": "sum"
               }
             ]
           }
