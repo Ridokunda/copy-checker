@@ -444,7 +444,6 @@ function parseJavaFile(filepath) {
 // --- Feature Extraction ---
 function extractFeatures(ast) {
   const stats = {
-    num_classes: 0,
     num_methods: 0,
     num_if: 0,
     num_for: 0,
@@ -463,7 +462,7 @@ function extractFeatures(ast) {
     max_depth: 0
   };
 
-  const sequence = []; // collect node types
+  const sequence = [];
   let methodCount = 0;
 
   function traverse(node, depth = 0) {
@@ -472,7 +471,6 @@ function extractFeatures(ast) {
     if (depth > stats.max_depth) stats.max_depth = depth;
 
     switch (node.type) {
-      case "ClassDeclaration": stats.num_classes++; break;
       case "MethodDeclaration":
         stats.num_methods++;
         methodCount++;
@@ -505,28 +503,61 @@ function extractFeatures(ast) {
   delete stats.total_method_lengths;
 
   // --- n-gram extraction ---
-  /*function generateNGrams(seq, n) {
-    const grams = {};
+  function generateNGrams(seq, n) {
+    let grams = {}
+    if(n === 2){
+      grams = {
+        system_if:0,
+        vardec_while:0,
+        expression_expression:0,
+      };
+    }
+    if(n === 4){
+      grams = {
+        for_cond_block_if:0,
+        vardec_for_cond_block:0,
+        if_cond_block_system_:0,
+        if_cond_block_if:0,
+        if_cond_block_while:0,
+        if_cond_block_vardec:0,
+        while_cond_block_if:0,
+        vardec_if_cond_block:0,
+        while_cond_block_vardec:0,
+        expression_expression_expression_expression:0
+      };
+    }
+    
+
     for (let i = 0; i <= seq.length - n; i++) {
       const gram = seq.slice(i, i + n).join('_');
-      grams[gram] = (grams[gram] || 0) + 1;
+      //console.log(gram);
+      if(n == 2){
+        if(gram === "SystemCall_IfStatement") grams.system_if++;
+        if(gram === "VariableDeclaration_WhileStatement") grams.vardec_while++;
+        if(gram === "ExpressionStatement_ExpressionStatement") grams.expression_expression++;
+
+      }else if(n == 4){
+        if(gram === "ForStatement_Condition_BlockStatement_IfStatement") grams.for_cond_block_if++;
+        if(gram === "VariableDeclaration_ForStatement_Condition_BlockStatement") grams.vardec_for_cond_block++;
+        if(gram === "IfStatement_Condition_BlockStatement_SystemCall") grams.if_cond_block_system_++;
+        if(gram === "IfStatement_Condition_BlockStatement_IfStatement") grams.if_cond_block_if++;
+        if(gram === "IfStatement_Condition_BlockStatement_WhileStatement") grams.if_cond_block_while++;
+        if(gram === "IfStatement_Condition_BlockStatement_VariableDeclaration") grams.if_cond_block_vardec++;
+        if(gram === "WhileStatement_Condition_BlockStatement_IfStatement") grams.while_cond_block_if++;
+        if(gram === "VariableDeclaration_IfStatement_Condition_BlockStatement") grams.vardec_if_cond_block++;
+        if(gram === "WhileStatement_Condition_BlockStatement_VariableDeclaration") grams.while_cond_block_vardec++;
+        if(gram === "ExpressionStatement_ExpressionStatement_ExpressionStatement_ExpressionStatement") grams.expression_expression_expression_expression++;
+      }
+      
     }
     return grams;
   }
 
-  function topKGrams(grams, k = 10) {
-    return Object.entries(grams)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, k)
-      .reduce((acc, [k, v]) => {
-        acc[`ngram_${k}`] = v;
-        return acc;
-      }, {});
-  }
+ 
 
-  const ngrams2 = topKGrams(generateNGrams(sequence, 2), 10);
-  const ngrams3 = topKGrams(generateNGrams(sequence, 3), 10);
-  Object.assign(stats, ngrams2, ngrams3);*/
+  const ngrams2 = generateNGrams(sequence, 2);
+  const ngrams4 = generateNGrams(sequence, 4);
+  Object.assign(stats, ngrams2);
 
   return stats;
 }
