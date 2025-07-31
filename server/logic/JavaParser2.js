@@ -531,7 +531,7 @@ function extractFeatures(ast) {
     for (let i = 0; i <= seq.length - n; i++) {
       const gram = seq.slice(i, i + n).join('_');
       //console.log(gram);
-      if(n == 2){
+      if(n === 2){
         if(gram === "SystemCall_IfStatement") grams.system_if++;
         if(gram === "VariableDeclaration_WhileStatement") grams.vardec_while++;
         if(gram === "ExpressionStatement_ExpressionStatement") grams.expression_expression++;
@@ -557,7 +557,7 @@ function extractFeatures(ast) {
 
   const ngrams2 = generateNGrams(sequence, 2);
   const ngrams4 = generateNGrams(sequence, 4);
-  Object.assign(stats, ngrams2);
+  Object.assign(stats, ngrams2, ngrams4);
 
   return stats;
 }
