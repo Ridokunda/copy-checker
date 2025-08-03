@@ -509,7 +509,9 @@ function extractFeatures(ast) {
       grams = {
         system_if:0,
         vardec_while:0,
+        vardec_if:0,
         expression_expression:0,
+        expression_if:0,
       };
     }
     if(n === 4){
@@ -530,13 +532,15 @@ function extractFeatures(ast) {
 
     for (let i = 0; i <= seq.length - n; i++) {
       const gram = seq.slice(i, i + n).join('_');
-      //console.log(gram);
+      console.log(gram);
       if(n === 2){
         if(gram === "SystemCall_IfStatement") grams.system_if++;
         if(gram === "VariableDeclaration_WhileStatement") grams.vardec_while++;
+        if(gram === "VariableDeclaration_IfStatement") grams.vardec_if++;
         if(gram === "ExpressionStatement_ExpressionStatement") grams.expression_expression++;
+        if(gram === "ExpressionStatement_IfStatement") grams.expression_if++;
 
-      }else if(n == 4){
+      }else if(n === 4){
         if(gram === "ForStatement_Condition_BlockStatement_IfStatement") grams.for_cond_block_if++;
         if(gram === "VariableDeclaration_ForStatement_Condition_BlockStatement") grams.vardec_for_cond_block++;
         if(gram === "IfStatement_Condition_BlockStatement_SystemCall") grams.if_cond_block_system_++;

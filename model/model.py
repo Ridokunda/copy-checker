@@ -3,6 +3,8 @@ import re
 import numpy as np
 from glob import glob
 import random
+import nltk
+nltk.download('punkt_tab')
 from nltk.tokenize import word_tokenize
 from gensim.models import Word2Vec
 from tensorflow.keras.models import Sequential
@@ -22,10 +24,8 @@ class CodePlagiarismDetector:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             code = f.read()
         
-        # Remove comments
-        code = re.sub(r'#.*', '', code)  # Python
-        code = re.sub(r'\/\/.*', '', code)  # C-style
-        code = re.sub(r'\/\*.*?\*\/', '', code, flags=re.DOTALL)  # Multi-line
+        code = re.sub(r'\/\/.*', '', code)  
+        code = re.sub(r'\/\*.*?\*\/', '', code, flags=re.DOTALL)
         
         # Normalize whitespace and special tokens
         code = re.sub(r'\s+', ' ', code).strip()
@@ -241,6 +241,7 @@ class CodePlagiarismDetector:
         plt.xlabel('Predicted')
         plt.ylabel('True')
         plt.title('Confusion Matrix')
+        plt.savefig("confusion_Matrix.png") 
         plt.show()
         
         return file_info
@@ -330,14 +331,8 @@ if __name__ == "__main__":
     evaluation_results = detector.evaluate()
     
     # Analyze by plagiarism level
-    level_stats = detector.analyze_by_level(evaluation_results)
+    #level_stats = detector.analyze_by_level(evaluation_results)
     
     # Save models for future use
     detector.save_models()
     
-    # Example of detecting plagiarism between two specific files
-    file1 = "server/uploads/T5.java"
-    file2 = "server/uploads/T5.java"
-    if os.path.exists(file1) and os.path.exists(file2):
-        prob = detector.detect_plagiarism(file1, file2)
-        print(f"\nPlagiarism probability between {file1} and {file2}: {prob:.2f}")
