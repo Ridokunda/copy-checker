@@ -263,45 +263,7 @@ class CodePlagiarismDetector:
         
         return probability
     
-    def analyze_by_level(self, evaluation_results):
-        """Analyze performance by plagiarism level"""
-        level_stats = {}
-        
-        for result in evaluation_results:
-            if result["level"] is not None:
-                level = result["level"]
-                
-                if level not in level_stats:
-                    level_stats[level] = {
-                        "count": 0,
-                        "correct": 0,
-                        "probs": []
-                    }
-                
-                level_stats[level]["count"] += 1
-                if result["pred_label"] == result["true_label"]:
-                    level_stats[level]["correct"] += 1
-                level_stats[level]["probs"].append(result["prob"])
-        
-        # Calculate metrics
-        for level in level_stats:
-            level_stats[level]["accuracy"] = (
-                level_stats[level]["correct"] / level_stats[level]["count"]
-            )
-            level_stats[level]["avg_prob"] = (
-                sum(level_stats[level]["probs"]) / len(level_stats[level]["probs"])
-            )
-        
-        # Print results
-        print("\nPerformance by Plagiarism Level:")
-        for level, stats in sorted(level_stats.items()):
-            print(f"{level}:")
-            print(f"  Accuracy: {stats['accuracy']:.2%}")
-            print(f"  Avg Probability: {stats['avg_prob']:.2f}")
-            print(f"  Samples: {stats['count']}")
-        
-        return level_stats
-    
+
     def save_models(self, w2v_path="code_w2v.model", nn_path="plagiarism_nn.h5"):
         """Save trained models to disk"""
         self.w2v_model.save(w2v_path)
@@ -329,9 +291,6 @@ if __name__ == "__main__":
     # Evaluate on all cases
     print("\nEvaluating model...")
     evaluation_results = detector.evaluate()
-    
-    # Analyze by plagiarism level
-    #level_stats = detector.analyze_by_level(evaluation_results)
     
     # Save models for future use
     detector.save_models()
