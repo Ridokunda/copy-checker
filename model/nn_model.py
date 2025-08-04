@@ -153,9 +153,20 @@ class CodePlagiarismDetector:
             
             emb1 = self.document_embedding(tokens1, self.w2v_model)
             emb2 = self.document_embedding(tokens2, self.w2v_model)
-            
-            # Feature engineering
+            #print(emb1)
+           
             abs_diff = np.abs(emb1 - emb2)
+
+            emb1 = np.array(emb1)
+            emb2 = np.array(emb2)
+
+            dot_product = np.dot(emb1, emb2)
+            magnitude_1 = np.linalg.norm(emb1)
+            magnitude_2 = np.linalg.norm(emb2)
+
+            similarity = dot_product / (magnitude_1 * magnitude_2)
+            
+
             pair_features = np.concatenate([emb1, emb2, abs_diff])
             
             X.append(pair_features)
@@ -172,7 +183,7 @@ class CodePlagiarismDetector:
             epochs=15, 
             batch_size=32, 
             validation_split=0.2,
-            class_weight={0: 1., 1: 3.}  # Higher weight for plagiarism class
+            class_weight={0: 1., 1: 3.} 
         )
         
         return history
@@ -254,8 +265,19 @@ class CodePlagiarismDetector:
         emb1 = self.document_embedding(tokens1, self.w2v_model)
         emb2 = self.document_embedding(tokens2, self.w2v_model)
         
-        # Create input vector
         abs_diff = np.abs(emb1 - emb2)
+
+        emb1 = np.array(emb1)
+        emb2 = np.array(emb2)
+
+        dot_product = np.dot(emb1, emb2)
+        magnitude_1 = np.linalg.norm(emb1)
+        magnitude_2 = np.linalg.norm(emb2)
+
+        similarity = dot_product / (magnitude_1 * magnitude_2)
+        
+
+        
         pair_vector = np.concatenate([emb1, emb2, abs_diff]).reshape(1, -1)
         
         # Predict
