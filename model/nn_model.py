@@ -26,8 +26,6 @@ class CodePlagiarismDetector:
         
         code = re.sub(r'\/\/.*', '', code)  
         code = re.sub(r'\/\*.*?\*\/', '', code, flags=re.DOTALL)
-        
-        # Normalize whitespace and special tokens
         code = re.sub(r'\s+', ' ', code).strip()
         
         # Tokenize
@@ -123,7 +121,7 @@ class CodePlagiarismDetector:
             for non_plag in random.sample(other_non_plag, min(num_negative_pairs, len(other_non_plag))):
                 negative_pairs.append((orig, non_plag, 0))
         
-        # Combine and shuffle
+        
         all_pairs = positive_pairs + negative_pairs
         random.shuffle(all_pairs)
         
@@ -157,6 +155,7 @@ class CodePlagiarismDetector:
            
             abs_diff = np.abs(emb1 - emb2)
 
+            # Calculate cosine similarity
             emb1 = np.array(emb1)
             emb2 = np.array(emb2)
 
@@ -276,11 +275,9 @@ class CodePlagiarismDetector:
 
         similarity = dot_product / (magnitude_1 * magnitude_2)
         
-
         
         pair_vector = np.concatenate([emb1, emb2, abs_diff]).reshape(1, -1)
         
-        # Predict
         probability = self.nn_model.predict(pair_vector, verbose=0)[0][0]
         
         return probability
