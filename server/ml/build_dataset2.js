@@ -28,7 +28,7 @@ function getAllFeatureKeys(dataset) {
   return Array.from(keySet);
 }
 
-// Convert a feature object to a consistent vector based on master keys
+// Convert a feature object to a vector
 function toVector(featureObj, keys) {
   return keys.map((k) => featureObj[k] || 0);
 }
@@ -66,12 +66,11 @@ function buildDataset() {
     }
   }
 
-  // Get all keys excluding n-gram keys
   const allKeys = getAllFeatureKeys(
     rawDataset.flatMap(({ features1, features2 }) => [features1, features2])
   );
 
-  // Convert to uniform vectors
+  // Convert to vectors
   rawDataset.forEach(({ features1, features2, label }) => {
     const vec1 = toVector(features1, allKeys);
     const vec2 = toVector(features2, allKeys);
@@ -79,7 +78,7 @@ function buildDataset() {
   });
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(dataset, null, 2));
-  console.log(`✅ Dataset built: ${dataset.length} examples saved to ${OUTPUT_FILE}`);
+  console.log(`Dataset built: ${dataset.length} examples saved to ${OUTPUT_FILE}`);
 }
 
 buildDataset();

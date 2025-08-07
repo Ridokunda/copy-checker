@@ -1,5 +1,3 @@
-// Recursive Descent Parser for a Subset of Java - Returns AST
-// Focused on: classes, methods, if/for/while blocks, import/package declarations
 
 const fs = require("fs");
 
@@ -36,7 +34,7 @@ class Parser {
 
   match(...expected) {
     const token = this.current();
-    //console.log(`Matching against: ${expected}, current token: ${token}`);
+    
     if (expected.includes(token)) {
       this.next();
       return true;
