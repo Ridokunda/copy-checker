@@ -3,7 +3,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const { parseJavaFile, extractFeatures } = require('../logic/JavaParser2.js');
+const { parseJavaFile, extractFeatures, tokenize } = require('../logic/JavaParser2.js');
 const AdmZip = require("adm-zip");
 
 const router = express.Router();
@@ -16,10 +16,15 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
 
     console.log('Parsing files:', originalPath, suspectPath);
 
+    const originalCode = fs.readFileSync(originalPath, 'utf-8');
+    const suspectCode = fs.readFileSync(suspectPath, 'utf-8');
+    const originalTokens = tokenize(originalCode);
+    const suspectTokens = tokenize(suspectCode);
+
     const ast1 = parseJavaFile(originalPath);
     const ast2 = parseJavaFile(suspectPath);
-    const f1 = extractFeatures(ast1);
-    const f2 = extractFeatures(ast2);
+    const f1 = extractFeatures(ast1, originalTokens);
+    const f2 = extractFeatures(ast2, suspectTokens);
     
     const featureVector = [...Object.values(f1), ...Object.values(f2)];
 

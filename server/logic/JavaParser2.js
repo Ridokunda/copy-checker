@@ -440,8 +440,9 @@ function parseJavaFile(filepath) {
 }
 
 // --- Feature Extraction ---
-function extractFeatures(ast) {
+function extractFeatures(ast, num_tokens) {
   const stats = {
+    num_tokens:num_tokens,
     num_methods: 0,
     num_if: 0,
     num_for: 0,

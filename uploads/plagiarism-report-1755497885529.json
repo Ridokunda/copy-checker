@@ -1,0 +1,33 @@
+{
+  "totalFiles": 3,
+  "comparisons": [
+    {
+      "file1": "Main.java",
+      "file2": "T2.java",
+      "prediction": 1,
+      "confidence": [
+        0.09,
+        0.91
+      ]
+    },
+    {
+      "file1": "Main.java",
+      "file2": "T5.java",
+      "prediction": 1,
+      "confidence": [
+        0.05,
+        0.95
+      ]
+    },
+    {
+      "file1": "T2.java",
+      "file2": "T5.java",
+      "prediction": 1,
+      "confidence": [
+        0.05,
+        0.95
+      ]
+    }
+  ],
+  "submittedAt": "2025-08-18T06:18:05.529Z"
+}

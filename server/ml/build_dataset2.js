@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { parseJavaFile, extractFeatures } = require('../logic/JavaParser2.js');
+const { parseJavaFile, extractFeatures, tokenize } = require('../logic/JavaParser2.js');
 
 const BASE_DIR = './IR-Plag-Dataset';
 const OUTPUT_FILE = './dataset.json';
@@ -49,18 +49,26 @@ function buildDataset() {
     const nonPlagiarized = collectJavaFiles(nonPlagPath);
 
     for (const orig of originals) {
+      const originalCode = fs.readFileSync(orig, 'utf-8');
+     
+      const originalTokens = tokenize(originalCode);
+      
       const origAst = parseJavaFile(orig);
-      const origFeatures = extractFeatures(origAst);
+      const origFeatures = extractFeatures(origAst, originalTokens);
 
       for (const plag of plagiarized) {
+        const plagCode = fs.readFileSync(plag, 'utf-8');
+        const plagTokens = tokenize(plagCode);
         const plagAst = parseJavaFile(plag);
-        const plagFeatures = extractFeatures(plagAst);
+        const plagFeatures = extractFeatures(plagAst, plagTokens);
         rawDataset.push({ features1: origFeatures, features2: plagFeatures, label: 1 });
       }
 
       for (const nonPlag of nonPlagiarized) {
+        const nonCode = fs.readFileSync(nonPlag, 'utf-8');
+        const nonTokens = tokenize(nonCode);
         const nonAst = parseJavaFile(nonPlag);
-        const nonFeatures = extractFeatures(nonAst);
+        const nonFeatures = extractFeatures(nonAst, nonTokens);
         rawDataset.push({ features1: origFeatures, features2: nonFeatures, label: 0 });
       }
     }
