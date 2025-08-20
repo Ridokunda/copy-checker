@@ -23,11 +23,11 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
 
     const ast1 = parseJavaFile(originalPath);
     const ast2 = parseJavaFile(suspectPath);
-    const f1 = extractFeatures(ast1, originalTokens);
-    const f2 = extractFeatures(ast2, suspectTokens);
+    const f1 = extractFeatures(ast1, originalTokens.length);
+    const f2 = extractFeatures(ast2, suspectTokens.length);
     
     const featureVector = [...Object.values(f1), ...Object.values(f2)];
-
+    console.log('feature vector:'+' 1. '+Object.values(f1)+' 2. '+Object.values(f2));
     const py = spawn('python', ['model/predict_model2.py']);
     let output = '';
     let errorOutput = '';

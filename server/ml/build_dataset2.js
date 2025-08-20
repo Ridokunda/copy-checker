@@ -54,13 +54,13 @@ function buildDataset() {
       const originalTokens = tokenize(originalCode);
       
       const origAst = parseJavaFile(orig);
-      const origFeatures = extractFeatures(origAst, originalTokens);
+      const origFeatures = extractFeatures(origAst, originalTokens.length);
 
       for (const plag of plagiarized) {
         const plagCode = fs.readFileSync(plag, 'utf-8');
         const plagTokens = tokenize(plagCode);
         const plagAst = parseJavaFile(plag);
-        const plagFeatures = extractFeatures(plagAst, plagTokens);
+        const plagFeatures = extractFeatures(plagAst, plagTokens.length);
         rawDataset.push({ features1: origFeatures, features2: plagFeatures, label: 1 });
       }
 
@@ -68,7 +68,7 @@ function buildDataset() {
         const nonCode = fs.readFileSync(nonPlag, 'utf-8');
         const nonTokens = tokenize(nonCode);
         const nonAst = parseJavaFile(nonPlag);
-        const nonFeatures = extractFeatures(nonAst, nonTokens);
+        const nonFeatures = extractFeatures(nonAst, nonTokens.length);
         rawDataset.push({ features1: origFeatures, features2: nonFeatures, label: 0 });
       }
     }

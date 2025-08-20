@@ -44,7 +44,7 @@ class Parser {
 
   parse() {
     const ast = { type: "Program", body: [] };
-    console.log(`Starting parse at position ${this.pos}`);
+    //console.log(`Starting parse at position ${this.pos}`);
     while (this.match("package", "import")) {
       const keyword = this.tokens[this.pos - 1];
       const value = this.parseQualifiedName();
@@ -134,7 +134,7 @@ class Parser {
       if (this.match("(")) {
         const params = [];
         while (!this.match(")")) {
-          console.log(`Starting to parse parameters`);
+          //console.log(`Starting to parse parameters`);
           if (this.pos >= this.tokens.length) break;
           
           if (["final"].includes(this.current())) {
@@ -237,7 +237,7 @@ class Parser {
     if (this.match("=")) {
       value = this.parseAssignedValue();
     }
-    console.log(this.current());
+    //console.log(this.current());
     declarations.push({ name, value });
     
     // Handle multiple variables declared together 
@@ -252,7 +252,7 @@ class Parser {
     }
     
     if (!this.match(";")) {
-      console.log("failde");
+      //console.log("failde");
       this.pos = startPos;
       return null;
     }
@@ -413,7 +413,7 @@ class Parser {
         this.next();
       } 
     }
-    console.log("end parse block");
+    //console.log("end parse block");
     return { type: "BlockStatement", body };
   }
 
@@ -531,7 +531,7 @@ function extractFeatures(ast, num_tokens) {
 
     for (let i = 0; i <= seq.length - n; i++) {
       const gram = seq.slice(i, i + n).join('_');
-      console.log(gram);
+      //console.log(gram);
       if(n === 2){
         if(gram === "SystemCall_IfStatement") grams.system_if++;
         if(gram === "VariableDeclaration_WhileStatement") grams.vardec_while++;
@@ -561,7 +561,7 @@ function extractFeatures(ast, num_tokens) {
   const ngrams2 = generateNGrams(sequence, 2);
   const ngrams4 = generateNGrams(sequence, 4);
   Object.assign(stats, ngrams2, ngrams4);
-
+  console.log(stats)
   return stats;
 }
 
