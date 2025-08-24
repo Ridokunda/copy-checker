@@ -35,7 +35,7 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     const f1 = extractFeatures(ast1, originalTokens.length);
     const f2 = extractFeatures(ast2, suspectTokens.length);
 
-    f1['token_overlap'] = overlapCount;
+    //f1['token_overlap'] = overlapCount;
     
     const featureVector = [...Object.values(f1), ...Object.values(f2)];
     console.log('feature vector:'+' 1. '+Object.values(f1)+' 2. '+Object.values(f2));
