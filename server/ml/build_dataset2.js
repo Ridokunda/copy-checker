@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { parseJavaFile, extractFeatures, tokenize } = require('../logic/JavaParser2.js');
+const { parseJavaFile, extractFeatures, tokenize, getTokenMap } = require('../logic/JavaParser2.js');
 
 const BASE_DIR = './IR-Plag-Dataset';
 const OUTPUT_FILE = './dataset.json';
@@ -52,6 +52,8 @@ function buildDataset() {
       const originalCode = fs.readFileSync(orig, 'utf-8');
      
       const originalTokens = tokenize(originalCode);
+
+      const origTokenMap = getTokenMap(originalTokens);
       
       const origAst = parseJavaFile(orig);
       const origFeatures = extractFeatures(origAst, originalTokens.length);
@@ -59,6 +61,18 @@ function buildDataset() {
       for (const plag of plagiarized) {
         const plagCode = fs.readFileSync(plag, 'utf-8');
         const plagTokens = tokenize(plagCode);
+        const plagTokenMap = getTokenMap(plagTokens);
+         
+        //token overlap
+        let overlapCount = 0; 
+        for (const [token, count] of origTokenMap.entries()) {
+          if (plagTokenMap.has(token)) {
+            overlapCount += Math.min(count, plagTokenMap.get(token));
+          }
+        }
+        
+        //origFeatures['token_overlap'] = overlapCount;    
+
         const plagAst = parseJavaFile(plag);
         const plagFeatures = extractFeatures(plagAst, plagTokens.length);
         rawDataset.push({ features1: origFeatures, features2: plagFeatures, label: 1 });
@@ -67,6 +81,16 @@ function buildDataset() {
       for (const nonPlag of nonPlagiarized) {
         const nonCode = fs.readFileSync(nonPlag, 'utf-8');
         const nonTokens = tokenize(nonCode);
+        const nonTokenMap = getTokenMap(nonTokens);
+        //token overlap
+        let overlapCount = 0;
+        for (const [token, count] of origTokenMap.entries()) {
+          if (nonTokenMap.has(token)) {
+            overlapCount += Math.min(count, nonTokenMap.get(token));
+          }
+        }
+        //origFeatures['token_overlap'] = overlapCount;
+
         const nonAst = parseJavaFile(nonPlag);
         const nonFeatures = extractFeatures(nonAst, nonTokens.length);
         rawDataset.push({ features1: origFeatures, features2: nonFeatures, label: 0 });

@@ -439,6 +439,16 @@ function parseJavaFile(filepath) {
   return parser.parse();
 }
 
+function getTokenMap(tokens) {
+  const countMap = new Map();
+
+  for (const token of tokens) {
+    countMap.set(token, (countMap.get(token) || 0) + 1);
+  }
+  return countMap
+}
+  
+
 // --- Feature Extraction ---
 function extractFeatures(ast, num_tokens) {
   const stats = {
@@ -561,7 +571,6 @@ function extractFeatures(ast, num_tokens) {
   const ngrams2 = generateNGrams(sequence, 2);
   const ngrams4 = generateNGrams(sequence, 4);
   Object.assign(stats, ngrams2, ngrams4);
-  console.log(stats)
   return stats;
 }
 
@@ -569,5 +578,6 @@ function extractFeatures(ast, num_tokens) {
 module.exports = {
   parseJavaFile,
   extractFeatures,
-  tokenize
+  tokenize,
+  getTokenMap
 };

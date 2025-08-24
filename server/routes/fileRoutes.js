@@ -20,11 +20,22 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     const suspectCode = fs.readFileSync(suspectPath, 'utf-8');
     const originalTokens = tokenize(originalCode);
     const suspectTokens = tokenize(suspectCode);
+    const originalTokenMap = getTokenMap(originalTokens);
+    const suspectTokenMap = getTokenMap(suspectTokens); 
+    //token overlap
+    let overlapCount = 0;
+    for (const [token, count] of originalTokenMap.entries()) {
+      if (suspectTokenMap.has(token)) {
+        overlapCount += Math.min(count, suspectTokenMap.get(token));
+      }
+    }
 
     const ast1 = parseJavaFile(originalPath);
     const ast2 = parseJavaFile(suspectPath);
     const f1 = extractFeatures(ast1, originalTokens.length);
     const f2 = extractFeatures(ast2, suspectTokens.length);
+
+    f1['token_overlap'] = overlapCount;
     
     const featureVector = [...Object.values(f1), ...Object.values(f2)];
     console.log('feature vector:'+' 1. '+Object.values(f1)+' 2. '+Object.values(f2));

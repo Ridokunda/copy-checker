@@ -7,7 +7,7 @@
     },
     {
       "type": "ClassDeclaration",
-      "name": "T7",
+      "name": "T2",
       "body": [
         {
           "type": "MethodDeclaration",
@@ -40,138 +40,63 @@
               },
               {
                 "type": "SystemCall",
-                "value": ".out.print(\"Enter a 4 by 4 matrix row by row: \")"
+                "value": ".out.print(\"Enter the radius and length of a cylinder: \")"
               },
-              {
-                "type": "VariableDeclaration",
-                "kind": "typed",
-                "dataType": "double[][]",
-                "declarations": [
-                  {
-                    "name": "m",
-                    "value": "new double [ 4 ] [ 4 ]"
-                  }
-                ],
-                "modifiers": []
-              },
-              {
-                "type": "ForStatement",
-                "test": {
-                  "type": "Condition",
-                  "tokens": [
-                    "int",
-                    "i",
-                    "=",
-                    "0",
-                    ";",
-                    "i",
-                    "<",
-                    "4",
-                    ";",
-                    "i",
-                    "++"
-                  ]
-                },
-                "body": {
-                  "type": "ForStatement",
-                  "test": {
-                    "type": "Condition",
-                    "tokens": [
-                      "int",
-                      "j",
-                      "=",
-                      "0",
-                      ";",
-                      "j",
-                      "<",
-                      "4",
-                      ";",
-                      "j",
-                      "++"
-                    ]
-                  },
-                  "body": {
-                    "type": "ExpressionStatement",
-                    "expression": "m [ i"
-                  }
-                }
-              },
-              {
-                "type": "ExpressionStatement",
-                "expression": "[ j"
-              },
-              {
-                "type": "ExpressionStatement",
-                "expression": "= input . nextDouble ( )"
-              },
-              {
-                "type": "SystemCall",
-                "value": ".out.print(\"Sum of the elements in the major diagonal is \"+sumMajorDiagonal(m))"
-              }
-            ]
-          }
-        },
-        {
-          "type": "MethodDeclaration",
-          "modifiers": [
-            "public",
-            "static"
-          ],
-          "returnType": "double",
-          "name": "sumMajorDiagonal",
-          "params": [
-            {
-              "type": "double[][]",
-              "name": "m"
-            }
-          ],
-          "body": {
-            "type": "BlockStatement",
-            "body": [
               {
                 "type": "VariableDeclaration",
                 "kind": "typed",
                 "dataType": "double",
                 "declarations": [
                   {
-                    "name": "sum",
-                    "value": "0"
+                    "name": "radius",
+                    "value": "input . nextDouble ( )"
                   }
                 ],
                 "modifiers": []
               },
               {
-                "type": "ForStatement",
-                "test": {
-                  "type": "Condition",
-                  "tokens": [
-                    "int",
-                    "i",
-                    "=",
-                    "0",
-                    ";",
-                    "i",
-                    "<",
-                    "m",
-                    ".",
-                    "length",
-                    ";",
-                    "i",
-                    "++"
-                  ]
-                },
-                "body": {
-                  "type": "ExpressionStatement",
-                  "expression": "sum + = m [ i"
-                }
+                "type": "VariableDeclaration",
+                "kind": "typed",
+                "dataType": "double",
+                "declarations": [
+                  {
+                    "name": "length",
+                    "value": "input . nextDouble ( )"
+                  }
+                ],
+                "modifiers": []
               },
               {
-                "type": "ExpressionStatement",
-                "expression": "[ i"
+                "type": "VariableDeclaration",
+                "kind": "typed",
+                "dataType": "double",
+                "declarations": [
+                  {
+                    "name": "area",
+                    "value": "radius * radius * 3 . 14159"
+                  }
+                ],
+                "modifiers": []
               },
               {
-                "type": "ExpressionStatement",
-                "expression": "sum"
+                "type": "VariableDeclaration",
+                "kind": "typed",
+                "dataType": "double",
+                "declarations": [
+                  {
+                    "name": "volume",
+                    "value": "area * length"
+                  }
+                ],
+                "modifiers": []
+              },
+              {
+                "type": "SystemCall",
+                "value": ".out.println(\"The area is \"+area)"
+              },
+              {
+                "type": "SystemCall",
+                "value": ".out.println(\"The volume of the cylinder is \"+volume)"
               }
             ]
           }
