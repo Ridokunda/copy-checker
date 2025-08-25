@@ -54,9 +54,11 @@ function buildDataset() {
       const originalTokens = tokenize(originalCode);
 
       const origTokenMap = getTokenMap(originalTokens);
+
       
       const origAst = parseJavaFile(orig);
       const origFeatures = extractFeatures(origAst, originalTokens.length);
+      origFeatures['num_unique_tokens'] = origTokenMap.size;
 
       for (const plag of plagiarized) {
         const plagCode = fs.readFileSync(plag, 'utf-8');
@@ -75,6 +77,7 @@ function buildDataset() {
 
         const plagAst = parseJavaFile(plag);
         const plagFeatures = extractFeatures(plagAst, plagTokens.length);
+        plagFeatures['num_unique_tokens'] = plagTokenMap.size;
         rawDataset.push({ features1: origFeatures, features2: plagFeatures, label: 1 });
       }
 
@@ -90,9 +93,11 @@ function buildDataset() {
           }
         }
         //origFeatures['token_overlap'] = overlapCount;
+        
 
         const nonAst = parseJavaFile(nonPlag);
         const nonFeatures = extractFeatures(nonAst, nonTokens.length);
+        nonFeatures['num_unique_tokens'] = nonTokenMap.size;
         rawDataset.push({ features1: origFeatures, features2: nonFeatures, label: 0 });
       }
     }

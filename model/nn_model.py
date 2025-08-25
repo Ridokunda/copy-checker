@@ -4,7 +4,7 @@ import numpy as np
 from glob import glob
 import random
 import nltk
-nltk.download('punkt_tab')
+#nltk.download('punkt_tab')
 from nltk.tokenize import word_tokenize
 from gensim.models import Word2Vec
 from tensorflow.keras.models import Sequential
@@ -12,6 +12,7 @@ from tensorflow.keras.layers import Dense, Dropout
 from sklearn.metrics import classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
+import sys  
 
 class CodePlagiarismDetector:
     def __init__(self, root_dir):
@@ -137,11 +138,11 @@ class CodePlagiarismDetector:
         all_code_files = data["original"] + data["non_plagiarized"] + data["plagiarized"]
         
         # 3. Train Word2Vec
-        print("Training Word2Vec model...")
+        print("Training Word2Vec model...", file=sys.stderr)
         self.w2v_model = self.train_word2vec(all_code_files)
         
         # 4. Create training data
-        print("Creating training pairs...")
+        print("Creating training pairs...", file=sys.stderr)
         X = []
         y = []
         
@@ -175,7 +176,7 @@ class CodePlagiarismDetector:
         y = np.array(y)
         
         # 5. Train neural network
-        print("Training neural network...")
+        print("Training neural network...", file=sys.stderr)
         self.nn_model = self.create_similarity_model(X.shape[1])
         history = self.nn_model.fit(
             X, y, 
@@ -239,8 +240,8 @@ class CodePlagiarismDetector:
                 })
         
         # Generate classification report
-        print("\nClassification Report:")
-        print(classification_report(all_true, all_pred, target_names=["Non-plagiarized", "Plagiarized"]))
+        print("\nClassification Report:", file=sys.stderr)
+        print(classification_report(all_true, all_pred, target_names=["Non-plagiarized", "Plagiarized"]), file=sys.stderr)
         
         # Generate confusion matrix
         cm = confusion_matrix(all_true, all_pred)
@@ -251,7 +252,7 @@ class CodePlagiarismDetector:
         plt.xlabel('Predicted')
         plt.ylabel('True')
         plt.title('Confusion Matrix')
-        plt.savefig("confusion_Matrix.png") 
+        plt.savefig("confusion_Matrix_nn.png") 
         plt.show()
         
         return file_info
@@ -287,7 +288,7 @@ class CodePlagiarismDetector:
         """Save trained models to disk"""
         self.w2v_model.save(w2v_path)
         self.nn_model.save(nn_path)
-        print(f"Models saved to {w2v_path} and {nn_path}")
+        print(f"Models saved to {w2v_path} and {nn_path}", file=sys.stderr)
     
     def load_models(self, w2v_path="code_w2v.model", nn_path="plagiarism_nn.h5"):
         """Load trained models from disk"""
@@ -296,7 +297,7 @@ class CodePlagiarismDetector:
         
         self.w2v_model = Word2Vec.load(w2v_path)
         self.nn_model = load_model(nn_path)
-        print(f"Models loaded from {w2v_path} and {nn_path}")
+        print(f"Models loaded from {w2v_path} and {nn_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":
@@ -304,13 +305,11 @@ if __name__ == "__main__":
     detector = CodePlagiarismDetector(root_dir="IR-Plag-Dataset")
     
     # Train the models
-    print("Starting training process...")
+    print("Starting training process...", file=sys.stderr)
     training_history = detector.train()
     
     # Evaluate on all cases
-    print("\nEvaluating model...")
+    print("\nEvaluating model...", file=sys.stderr)
     evaluation_results = detector.evaluate()
     
-    # Save models for future use
     detector.save_models()
-    

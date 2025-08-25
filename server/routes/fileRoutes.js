@@ -196,4 +196,52 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
   }
 });
 
+// Neural Network model prediction route
+router.post('/nn-predict', upload.fields([{ name: 'original' }, { name: 'suspect' }]), async (req, res) => {
+  try {
+    const originalPath = req.files['original'][0].path;
+    const suspectPath = req.files['suspect'][0].path;
+
+    // Call Python script for NN model prediction
+    const py = spawn('python', [
+      'model/nn_predict.py',
+      originalPath,
+      suspectPath
+    ]);
+    let output = '';
+    let errorOutput = '';
+
+    py.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+
+    py.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+      console.error(`Python error: ${data}`);
+    });
+
+    py.on('close', (code) => {
+      // Clean up uploaded files
+      fs.unlinkSync(originalPath);
+      fs.unlinkSync(suspectPath);
+
+      if (code !== 0) {
+        console.error('Python script failed with code:', code);
+        console.error('Error output:', errorOutput);
+        return res.status(500).json({ success: false, error: 'Python script failed' });
+      }
+      try {
+        const result = JSON.parse(output);
+        res.json({ success: true, ...result });
+      } catch (e) {
+        console.error('Failed to parse Python output', e);
+        res.status(500).json({ success: false, error: 'Failed to parse prediction' });
+      }
+    });
+  } catch (err) {
+    console.error('NN Route error:', err);
+    res.status(500).json({ success: false, error: 'Server error: ' + err.message });
+  }
+});
+
 module.exports = router;

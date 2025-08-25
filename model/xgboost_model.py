@@ -37,12 +37,6 @@ def train_xgboost_model(X, y, test_size=0.2, random_state=42):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y
     )
-    
-    # Scale features (optional but can help)
-    """ scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test) """
-    
    
     # Define parameter grid for hyperparameter tuning
     param_grid = {
@@ -122,7 +116,7 @@ def train_xgboost_model(X, y, test_size=0.2, random_state=42):
     }
 
 def save_model(model, model_path='xgboost_model.pkl'):
-    """Save the trained model and scaler"""
+    """Save the trained model"""
     joblib.dump(model, model_path)
     print(f"Model saved to {model_path}")
 
@@ -133,7 +127,7 @@ def load_model(model_path='xgboost_model.pkl'):
     return model
     
 
-def predict_plagiarism(model, scaler, features):
+def predict_plagiarism(model, features):
     """Predict plagiarism for given features"""
     # Ensure features is a 2D array
     if len(features.shape) == 1:

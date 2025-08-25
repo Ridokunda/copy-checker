@@ -51,7 +51,7 @@ function FileUpload() {
 
     setIsLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/predict", formData);
+      const res = await axios.post("http://localhost:5000/api/nn-predict", formData);
       console.log("Raw response:", res.data); 
       setResult(res.data);
       setMessage("Prediction complete.");
