@@ -570,14 +570,100 @@ function extractFeatures(ast, num_tokens) {
 
   const ngrams2 = generateNGrams(sequence, 2);
   const ngrams4 = generateNGrams(sequence, 4);
-  Object.assign(stats, ngrams2, ngrams4);
+  Object.assign(stats);
   return stats;
 }
+
+// --- Levenshtein Distance ---
+// --- Levenshtein distance on AST node-type sequences ---
+
+/**
+ * Traverse AST in preorder and collect node types.
+ */
+function linearizeAST(ast) {
+  const sequence = [];
+  function visit(node) {
+    if (!node || typeof node !== "object") return;
+    if (node.node) sequence.push(node.node); // 'node' holds the type
+    for (const key in node) {
+      if (Array.isArray(node[key])) {
+        node[key].forEach(child => visit(child));
+      } else if (typeof node[key] === "object" && node[key] !== null) {
+        visit(node[key]);
+      }
+    }
+  }
+  visit(ast);
+  return sequence;
+}
+
+/**
+ * Standard Levenshtein distance for arrays (AST node sequences).
+ */
+function levenshteinDistanceAST(seqA, seqB) {
+  const m = seqA.length, n = seqB.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  if (n > m) return levenshteinDistanceAST(seqB, seqA);
+
+  let prev = new Array(n + 1);
+  let curr = new Array(n + 1);
+
+  for (let j = 0; j <= n; j++) prev[j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    const ai = seqA[i - 1];
+    for (let j = 1; j <= n; j++) {
+      const cost = ai === seqB[j - 1] ? 0 : 1;
+      const del = prev[j] + 1;
+      const ins = curr[j - 1] + 1;
+      const sub = prev[j - 1] + cost;
+      curr[j] = Math.min(del, ins, sub);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[n];
+}
+
+/**
+ * Normalized similarity in [0,1] from AST Levenshtein distance.
+ */
+function levenshteinSimilarityAST(seqA, seqB) {
+  const maxLen = Math.max(seqA.length, seqB.length);
+  if (maxLen === 0) return 1;
+  const dist = levenshteinDistanceAST(seqA, seqB);
+  return 1 - dist / maxLen;
+}
+
+
+function astLevenshteinDistance(codeA, codeB) {
+  const astA = parseJavaFile(codeA);
+  const astB = parseJavaFile(codeB);
+  const seqA = linearizeAST(astA);
+  const seqB = linearizeAST(astB);
+  return levenshteinDistanceAST(seqA, seqB);
+}
+
+function astLevenshteinSimilarity(codeA, codeB) {
+  const astA = parseJavaFile(codeA);
+  const astB = parseJavaFile(codeB);
+  const seqA = linearizeAST(astA);
+  const seqB = linearizeAST(astB);
+  return levenshteinSimilarityAST(seqA, seqB);
+}
+
 
 
 module.exports = {
   parseJavaFile,
   extractFeatures,
   tokenize,
-  getTokenMap
+  getTokenMap,
+  linearizeAST,
+  levenshteinDistanceAST,
+  levenshteinSimilarityAST,
+  astLevenshteinDistance,
+  astLevenshteinSimilarity
 };

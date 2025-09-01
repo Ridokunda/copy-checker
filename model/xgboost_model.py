@@ -38,7 +38,7 @@ def train_xgboost_model(X, y, test_size=0.2, random_state=42):
         X, y, test_size=test_size, random_state=random_state, stratify=y
     )
    
-    # Define parameter grid for hyperparameter tuning
+    
     param_grid = {
         'max_depth': [3, 4, 5, 6],
         'learning_rate': [0.01, 0.1, 0.2],
@@ -55,7 +55,6 @@ def train_xgboost_model(X, y, test_size=0.2, random_state=42):
     )
     
     # Perform Grid Search with Cross-Validation
-    print("Performing hyperparameter tuning...")
     grid_search = GridSearchCV(
         estimator=xgb_model,
         param_grid=param_grid,

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { parseJavaFile, extractFeatures, tokenize, getTokenMap } = require('../logic/JavaParser2.js');
+const { parseJavaFile, extractFeatures, tokenize, getTokenMap,linearizeAST, levenshteinDistanceAST,
+  levenshteinSimilarityAST, astLevenshteinDistance, astLevenshteinSimilarity } = require('../logic/JavaParser2.js');
 
 const BASE_DIR = './IR-Plag-Dataset';
 const OUTPUT_FILE = './dataset.json';
@@ -79,6 +80,13 @@ function buildDataset() {
         const plagFeatures = extractFeatures(plagAst, plagTokens.length);
         plagFeatures['num_unique_tokens'] = plagTokenMap.size;
         rawDataset.push({ features1: origFeatures, features2: plagFeatures, label: 1 });
+
+        // Compute AST-based similarity metrics
+        const astLevDist = astLevenshteinDistance(orig, plag);
+        const astLevSim = astLevenshteinSimilarity(orig, plag);
+
+        plagFeatures['ast_levenshtein_distance'] = astLevDist;
+        plagFeatures['ast_levenshtein_similarity'] = astLevSim;
       }
 
       for (const nonPlag of nonPlagiarized) {
@@ -99,10 +107,17 @@ function buildDataset() {
         const nonFeatures = extractFeatures(nonAst, nonTokens.length);
         nonFeatures['num_unique_tokens'] = nonTokenMap.size;
         rawDataset.push({ features1: origFeatures, features2: nonFeatures, label: 0 });
+
+        // Compute AST-based similarity metrics        
+        const astLevDist = astLevenshteinDistance(orig, nonPlag);
+        const astLevSim = astLevenshteinSimilarity(orig, nonPlag);
+
+        nonFeatures['ast_levenshtein_distance'] = astLevDist;
+        nonFeatures['ast_levenshtein_similarity'] = astLevSim;
       }
     }
   }
-
+  // Get all feature keys for normalization
   const allKeys = getAllFeatureKeys(
     rawDataset.flatMap(({ features1, features2 }) => [features1, features2])
   );

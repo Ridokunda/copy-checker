@@ -112,7 +112,7 @@ forest = random_forest(
     max_depth=15, 
     min_size=5, 
     sample_size=0.8, 
-    n_trees=100,
+    n_trees=200,
     )
 
 # Save the model
