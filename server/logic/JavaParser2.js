@@ -575,11 +575,8 @@ function extractFeatures(ast, num_tokens) {
 }
 
 // --- Levenshtein Distance ---
-// --- Levenshtein distance on AST node-type sequences ---
 
-/**
- * Traverse AST in preorder and collect node types.
- */
+//Traverse AST in preorder and collect node types.
 function linearizeAST(ast) {
   const sequence = [];
   function visit(node) {
@@ -597,9 +594,8 @@ function linearizeAST(ast) {
   return sequence;
 }
 
-/**
- * Standard Levenshtein distance for arrays (AST node sequences).
- */
+
+ //Levenshtein distance for arrays
 function levenshteinDistanceAST(seqA, seqB) {
   const m = seqA.length, n = seqB.length;
   if (m === 0) return n;
@@ -627,9 +623,7 @@ function levenshteinDistanceAST(seqA, seqB) {
   return prev[n];
 }
 
-/**
- * Normalized similarity in [0,1] from AST Levenshtein distance.
- */
+
 function levenshteinSimilarityAST(seqA, seqB) {
   const maxLen = Math.max(seqA.length, seqB.length);
   if (maxLen === 0) return 1;
