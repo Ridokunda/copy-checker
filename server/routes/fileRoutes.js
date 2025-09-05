@@ -3,7 +3,12 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const { parseJavaFile, extractFeatures, tokenize } = require('../logic/JavaParser2.js');
+const { parseJavaFile, extractFeatures, tokenize, getTokenMap,
+  linearizeAST,
+  levenshteinDistanceAST,
+  levenshteinSimilarityAST,
+  astLevenshteinDistance,
+  astLevenshteinSimilarity } = require('../logic/JavaParser2.js');
 const AdmZip = require("adm-zip");
 
 const router = express.Router();
@@ -16,29 +21,35 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
 
     console.log('Parsing files:', originalPath, suspectPath);
 
+
+    // --- Build normalized feature vector as in build_dataset2.js ---
     const originalCode = fs.readFileSync(originalPath, 'utf-8');
     const suspectCode = fs.readFileSync(suspectPath, 'utf-8');
     const originalTokens = tokenize(originalCode);
     const suspectTokens = tokenize(suspectCode);
     const originalTokenMap = getTokenMap(originalTokens);
-    const suspectTokenMap = getTokenMap(suspectTokens); 
-    //token overlap
-    let overlapCount = 0;
-    for (const [token, count] of originalTokenMap.entries()) {
-      if (suspectTokenMap.has(token)) {
-        overlapCount += Math.min(count, suspectTokenMap.get(token));
-      }
-    }
+    const suspectTokenMap = getTokenMap(suspectTokens);
 
     const ast1 = parseJavaFile(originalPath);
     const ast2 = parseJavaFile(suspectPath);
     const f1 = extractFeatures(ast1, originalTokens.length);
     const f2 = extractFeatures(ast2, suspectTokens.length);
+    f1['num_unique_tokens'] = originalTokenMap.size;
+    f2['num_unique_tokens'] = suspectTokenMap.size;
+    // Optionally add AST metrics if needed
+    f2['ast_levenshtein_distance'] = astLevenshteinDistance(originalPath, suspectPath);
+    f2['ast_levenshtein_similarity'] = astLevenshteinSimilarity(originalPath, suspectPath);
 
-    //f1['token_overlap'] = overlapCount;
-    
-    const featureVector = [...Object.values(f1), ...Object.values(f2)];
-    console.log('feature vector:'+' 1. '+Object.values(f1)+' 2. '+Object.values(f2));
+    // Get all keys for normalization
+    const allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
+    // Convert to normalized vector
+    function toVector(featureObj, keys) {
+      return keys.map((k) => featureObj[k] || 0);
+    }
+    const vec1 = toVector(f1, allKeys);
+    const vec2 = toVector(f2, allKeys);
+    const featureVector = [...vec1, ...vec2];
+    console.log('feature vector:', featureVector);
     const py = spawn('python', ['model/predict_model2.py']);
     let output = '';
     let errorOutput = '';
@@ -86,7 +97,15 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
 function runPrediction(f1, f2) {
   return new Promise((resolve, reject) => {
     try {
-      const featureVector = [...Object.values(f1), ...Object.values(f2)];
+
+      // --- Build normalized feature vector as in build_dataset2.js ---
+      const allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
+      function toVector(featureObj, keys) {
+        return keys.map((k) => featureObj[k] || 0);
+      }
+      const vec1 = toVector(f1, allKeys);
+      const vec2 = toVector(f2, allKeys);
+      const featureVector = [...vec1, ...vec2];
       const py = spawn("python", ["model/predict_model2.py"]);
       let output = "";
       let errorOutput = "";
@@ -147,8 +166,13 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
 
     // Parse + extract features
     const fileData = javaFiles.map(f => {
+      const code = fs.readFileSync(f, 'utf-8');
+      const tokens = tokenize(code);
+      const tokenMap = getTokenMap(tokens);
       const ast = parseJavaFile(f);
-      const features = extractFeatures(ast);
+      const features = extractFeatures(ast, tokens.length);
+      features['num_unique_tokens'] = tokenMap.size;
+      // Optionally add AST metrics if needed (for pairwise, see below)
       return {
         filename: path.basename(f),
         path: f,
@@ -156,11 +180,52 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
       };
     });
 
+    // Collect all keys for normalization
+    const allKeys = Array.from(new Set(fileData.flatMap(fd => Object.keys(fd.features))));
+    function toVector(featureObj, keys) {
+      return keys.map((k) => featureObj[k] || 0);
+    }
+
     // Compare each pair
     const comparisons = [];
     for (let i = 0; i < fileData.length; i++) {
       for (let j = i + 1; j < fileData.length; j++) {
-        const result = await runPrediction(fileData[i].features, fileData[j].features);
+        // Add AST metrics for the second file in the pair
+        const f1 = { ...fileData[i].features };
+        const f2 = { ...fileData[j].features };
+        f2['ast_levenshtein_distance'] = astLevenshteinDistance(fileData[i].path, fileData[j].path);
+        f2['ast_levenshtein_similarity'] = astLevenshteinSimilarity(fileData[i].path, fileData[j].path);
+        const vec1 = toVector(f1, allKeys);
+        const vec2 = toVector(f2, allKeys);
+        const featureVector = [...vec1, ...vec2];
+        // Use runPrediction with normalized vectors
+        const result = await new Promise((resolve, reject) => {
+          const py = spawn("python", ["model/predict_model2.py"]);
+          let output = "";
+          let errorOutput = "";
+          py.stdin.write(JSON.stringify({ features: featureVector }));
+          py.stdin.end();
+          py.stdout.on("data", (data) => {
+            output += data.toString();
+          });
+          py.stderr.on("data", (data) => {
+            errorOutput += data.toString();
+            console.error(`Python error: ${data}`);
+          });
+          py.on("close", (code) => {
+            if (code !== 0) {
+              console.error("Python script failed:", errorOutput);
+              return reject("Python script failed");
+            }
+            try {
+              const parsed = JSON.parse(output);
+              resolve(parsed);
+            } catch (e) {
+              console.error("Parse error:", e, output);
+              reject("Failed to parse prediction output");
+            }
+          });
+        });
         comparisons.push({
           file1: fileData[i].filename,
           file2: fileData[j].filename,

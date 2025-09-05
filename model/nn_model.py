@@ -40,11 +40,13 @@ class CodePlagiarismDetector:
         
         model = Word2Vec(
             sentences=processed_code,
-            vector_size=100,
+            vector_size=300,
             window=5,
             min_count=1,
             workers=4,
-            sg=1
+            sg=1,
+            epochs=10,
+            negative=15
         )
         
         return model
@@ -59,7 +61,9 @@ class CodePlagiarismDetector:
     def create_similarity_model(self, input_dim):
         """Create neural network model for plagiarism detection"""
         model = Sequential([
-            Dense(256, activation='relu', input_shape=(input_dim,)),
+            Dense(512, activation='relu', input_shape=(input_dim,)),
+            Dropout(0.3),
+            Dense(256, activation='relu'),
             Dropout(0.3),
             Dense(128, activation='relu'),
             Dropout(0.2),
