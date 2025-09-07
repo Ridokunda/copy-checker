@@ -40,7 +40,7 @@ class CodePlagiarismDetector:
         
         model = Word2Vec(
             sentences=processed_code,
-            vector_size=100,
+            vector_size=128,
             window=5,
             min_count=1,
             workers=4,
