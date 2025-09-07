@@ -73,8 +73,7 @@ function buildDataset() {
             overlapCount += Math.min(count, plagTokenMap.get(token));
           }
         }
-        
-        //origFeatures['token_overlap'] = overlapCount;    
+        origFeatures['token_overlap'] = overlapCount;    
 
         const plagAst = parseJavaFile(plag);
         const plagFeatures = extractFeatures(plagAst, plagTokens.length);
@@ -93,6 +92,7 @@ function buildDataset() {
         const nonCode = fs.readFileSync(nonPlag, 'utf-8');
         const nonTokens = tokenize(nonCode);
         const nonTokenMap = getTokenMap(nonTokens);
+
         //token overlap
         let overlapCount = 0;
         for (const [token, count] of origTokenMap.entries()) {
@@ -100,7 +100,7 @@ function buildDataset() {
             overlapCount += Math.min(count, nonTokenMap.get(token));
           }
         }
-        //origFeatures['token_overlap'] = overlapCount;
+        origFeatures['token_overlap'] = overlapCount;
         
 
         const nonAst = parseJavaFile(nonPlag);
@@ -132,5 +132,52 @@ function buildDataset() {
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(dataset, null, 2));
   console.log(`Dataset built: ${dataset.length} examples saved to ${OUTPUT_FILE}`);
 }
+//final feature vector looks like
+/*
+final vector is:
+  [ features: [
+    num_tokens (orig),
+    num_methods (orig),
+    num_if (orig),
+    num_for (orig),
+    num_while (orig),
+    num_return (orig),
+    num_imports (orig),
+    num_package (orig),
+    num_expressions (orig),
+    num_statements (orig),
+    num_systemcall (orig),
+    num_javacall (orig),
+    num_variables (orig),
+    num_var_declarations (orig),
+    num_method_calls (orig),
+    max_depth (orig),
+    avg_method_length (orig),
+    num_unique_tokens (orig),
+    token_overlap (orig),
+    num_tokens (other),
+    num_methods (other),
+    num_if (other),
+    num_for (other),
+    num_while (other),
+    num_return (other),
+    num_imports (other),
+    num_package (other),
+    num_expressions (other),
+    num_statements (other),
+    num_systemcall (other),
+    num_javacall (other),
+    num_variables (other),
+    num_var_declarations (other),
+    num_method_calls (other),
+    max_depth (other),
+    avg_method_length (other),
+    num_unique_tokens (other),
+    ast_levenshtein_distance (other),
+    ast_levenshtein_similarity (other)
+    ],
+    label:[1 or 0]
+  ]
+*/
 
 buildDataset();
