@@ -164,11 +164,10 @@ def main():
     
     print("\nTraining completed successfully!")
     print("Files saved:")
-    print("- plagiarism_model.pkl (trained XGBoost model)")
-    print("- scaler.pkl (feature scaler)")
+    print("- xgboost_model.pkl (trained XGBoost model)")
     print("- model_metrics.json (evaluation metrics)")
     print("- confusion_matrix.png (confusion matrix plot)")
-    print("- feature_importance.png (feature importance plot)")
+   
 
 if __name__ == "__main__":
     main()
