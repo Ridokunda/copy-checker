@@ -22,7 +22,7 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     console.log('Parsing files:', originalPath, suspectPath);
 
 
-    // --- Build normalized feature vector as in build_dataset2.js ---
+    //Build normalized feature vector as in build_dataset2.js
     const originalCode = fs.readFileSync(originalPath, 'utf-8');
     const suspectCode = fs.readFileSync(suspectPath, 'utf-8');
     const originalTokens = tokenize(originalCode);
@@ -36,12 +36,17 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     const f2 = extractFeatures(ast2, suspectTokens.length);
     f1['num_unique_tokens'] = originalTokenMap.size;
     f2['num_unique_tokens'] = suspectTokenMap.size;
-    // Optionally add AST metrics if needed
+    // Add AST Levenshtein metrics
     f2['ast_levenshtein_distance'] = astLevenshteinDistance(originalPath, suspectPath);
     f2['ast_levenshtein_similarity'] = astLevenshteinSimilarity(originalPath, suspectPath);
 
-    // Get all keys for normalization
-    const allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
+    // Load allKeys from feature_keys.json for consistent feature order
+    let allKeys;
+    try {
+      allKeys = JSON.parse(fs.readFileSync('feature_keys.json', 'utf-8'));
+    } catch (e) {
+      allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
+    }
     // Convert to normalized vector
     function toVector(featureObj, keys) {
       return keys.map((k) => featureObj[k] || 0);
@@ -98,7 +103,7 @@ function runPrediction(f1, f2) {
   return new Promise((resolve, reject) => {
     try {
 
-      // --- Build normalized feature vector as in build_dataset2.js ---
+      //Build feature vector as in build_dataset2.js
       const allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
       function toVector(featureObj, keys) {
         return keys.map((k) => featureObj[k] || 0);
@@ -172,7 +177,7 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
       const ast = parseJavaFile(f);
       const features = extractFeatures(ast, tokens.length);
       features['num_unique_tokens'] = tokenMap.size;
-      // Optionally add AST metrics if needed (for pairwise, see below)
+      
       return {
         filename: path.basename(f),
         path: f,
@@ -181,7 +186,13 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
     });
 
     // Collect all keys for normalization
-    const allKeys = Array.from(new Set(fileData.flatMap(fd => Object.keys(fd.features))));
+    // Load allKeys from feature_keys.json for consistent feature order
+    let allKeys;
+    try {
+      allKeys = JSON.parse(fs.readFileSync('feature_keys.json', 'utf-8'));
+    } catch (e) {
+      allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
+    }
     function toVector(featureObj, keys) {
       return keys.map((k) => featureObj[k] || 0);
     }
@@ -237,7 +248,11 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
     // Cleanup: delete ZIP + extracted files
     fs.unlinkSync(zipPath);
     fileData.forEach(f => fs.unlinkSync(f.path));
-    fs.rmdirSync(extractPath, { recursive: true });
+    if (fs.rmSync) {
+      fs.rmSync(extractPath, { recursive: true, force: true });
+    } else {
+      fs.rmdirSync(extractPath, { recursive: true });
+    }
 
     // Build report
     const report = {

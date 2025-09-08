@@ -1,0 +1,96 @@
+{
+  "totalFiles": 5,
+  "comparisons": [
+    {
+      "file1": "L1 - Copy.java",
+      "file2": "L1.java",
+      "prediction": 1,
+      "confidence": [
+        0.465,
+        0.535
+      ]
+    },
+    {
+      "file1": "L1 - Copy.java",
+      "file2": "Main.java",
+      "prediction": 1,
+      "confidence": [
+        0,
+        1
+      ]
+    },
+    {
+      "file1": "L1 - Copy.java",
+      "file2": "T2.java",
+      "prediction": 1,
+      "confidence": [
+        0,
+        1
+      ]
+    },
+    {
+      "file1": "L1 - Copy.java",
+      "file2": "T5.java",
+      "prediction": 1,
+      "confidence": [
+        0.055,
+        0.945
+      ]
+    },
+    {
+      "file1": "L1.java",
+      "file2": "Main.java",
+      "prediction": 1,
+      "confidence": [
+        0,
+        1
+      ]
+    },
+    {
+      "file1": "L1.java",
+      "file2": "T2.java",
+      "prediction": 1,
+      "confidence": [
+        0,
+        1
+      ]
+    },
+    {
+      "file1": "L1.java",
+      "file2": "T5.java",
+      "prediction": 1,
+      "confidence": [
+        0.055,
+        0.945
+      ]
+    },
+    {
+      "file1": "Main.java",
+      "file2": "T2.java",
+      "prediction": 1,
+      "confidence": [
+        0,
+        1
+      ]
+    },
+    {
+      "file1": "Main.java",
+      "file2": "T5.java",
+      "prediction": 1,
+      "confidence": [
+        0.055,
+        0.945
+      ]
+    },
+    {
+      "file1": "T2.java",
+      "file2": "T5.java",
+      "prediction": 1,
+      "confidence": [
+        0.055,
+        0.945
+      ]
+    }
+  ],
+  "submittedAt": "2025-09-08T07:48:20.134Z"
+}

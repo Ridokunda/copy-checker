@@ -122,6 +122,9 @@ function buildDataset() {
     rawDataset.flatMap(({ features1, features2 }) => [features1, features2])
   );
 
+  // Save feature keys for reference
+  fs.writeFileSync('./feature_keys.json', JSON.stringify(allKeys, null, 2));
+
   // Convert to vectors
   rawDataset.forEach(({ features1, features2, label }) => {
     const vec1 = toVector(features1, allKeys);

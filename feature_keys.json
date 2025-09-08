@@ -1,0 +1,23 @@
+[
+  "num_tokens",
+  "num_methods",
+  "num_if",
+  "num_for",
+  "num_while",
+  "num_return",
+  "num_imports",
+  "num_package",
+  "num_expressions",
+  "num_statements",
+  "num_systemcall",
+  "num_javacall",
+  "num_variables",
+  "num_var_declarations",
+  "num_method_calls",
+  "max_depth",
+  "avg_method_length",
+  "num_unique_tokens",
+  "token_overlap",
+  "ast_levenshtein_distance",
+  "ast_levenshtein_similarity"
+]

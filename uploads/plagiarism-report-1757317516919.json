@@ -1,0 +1,56 @@
+{
+  "totalFiles": 5,
+  "comparisons": [
+    {
+      "file1": "L1 - Copy.java",
+      "file2": "L1.java",
+      "error": "list index out of range"
+    },
+    {
+      "file1": "L1 - Copy.java",
+      "file2": "Main.java",
+      "error": "list index out of range"
+    },
+    {
+      "file1": "L1 - Copy.java",
+      "file2": "T2.java",
+      "error": "list index out of range"
+    },
+    {
+      "file1": "L1 - Copy.java",
+      "file2": "T5.java",
+      "error": "list index out of range"
+    },
+    {
+      "file1": "L1.java",
+      "file2": "Main.java",
+      "error": "list index out of range"
+    },
+    {
+      "file1": "L1.java",
+      "file2": "T2.java",
+      "error": "list index out of range"
+    },
+    {
+      "file1": "L1.java",
+      "file2": "T5.java",
+      "error": "list index out of range"
+    },
+    {
+      "file1": "Main.java",
+      "file2": "T2.java",
+      "error": "list index out of range"
+    },
+    {
+      "file1": "Main.java",
+      "file2": "T5.java",
+      "error": "list index out of range"
+    },
+    {
+      "file1": "T2.java",
+      "file2": "T5.java",
+      "error": "list index out of range"
+    }
+  ],
+  "submittedAt": "2025-09-08T07:45:16.919Z"
+}
