@@ -14,7 +14,8 @@ y = np.array([item['label'] for item in data])
 # Load models
 svm = joblib.load('svm_model.pkl')
 xgb = joblib.load('xgboost_model.pkl')
-rf = joblib.load('model.pkl')  
+rf = joblib.load('model.pkl') 
+lr = joblib.load('logistic_regression_model.pkl') 
 
 # Get predictions (probabilities)
 svm_probs = svm.predict_proba(X)[:, 1]
@@ -33,6 +34,7 @@ def bagging_predict_proba(trees, row):
     return positive_votes / len(trees)
 
 rf_probs = np.array([bagging_predict_proba(rf, x) for x in X])
+lr_probs = lr.predict_proba(X)[:, 1]
 
 """ # Load neural network model
 nn = load_model('plagiarism_nn.h5')
@@ -41,7 +43,7 @@ nn_probs = nn.predict(X, verbose=0).flatten() """
 
 
 # Simple average ensemble 
-ensemble_probs = (svm_probs + xgb_probs + rf_probs) / 3
+ensemble_probs = (svm_probs + xgb_probs + rf_probs + lr_probs) / 4
 ensemble_pred = (ensemble_probs > 0.5).astype(int)
 
 print('Ensemble Classification Report:')
