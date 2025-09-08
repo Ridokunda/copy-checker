@@ -20,6 +20,20 @@ function collectJavaFiles(dirPath) {
   return files;
 }
 
+// Collect all possible keys across the dataset to normalize vectors
+function getAllFeatureKeys(dataset) {
+  const keySet = new Set();
+  dataset.forEach((item) => {
+    Object.keys(item).forEach((k) => keySet.add(k));
+  });
+  return Array.from(keySet);
+}
+
+// Convert a feature object to a vector
+function toVector(featureObj, keys) {
+  return keys.map((k) => featureObj[k] || 0);
+}
+
 function buildDataset() {
   const rawDataset = [];
   const dataset = [];
@@ -103,11 +117,15 @@ function buildDataset() {
       }
     }
   }
-  
+  // Get all feature keys for normalization
+  const allKeys = getAllFeatureKeys(
+    rawDataset.flatMap(({ features1, features2 }) => [features1, features2])
+  );
+
   // Convert to vectors
   rawDataset.forEach(({ features1, features2, label }) => {
-    const vec1 = Object.values(features1);
-    const vec2 = Object.values(features2);
+    const vec1 = toVector(features1, allKeys);
+    const vec2 = toVector(features2, allKeys);
     dataset.push({ features: [...vec1, ...vec2], label });
   });
 

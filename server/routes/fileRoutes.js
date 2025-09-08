@@ -36,13 +36,18 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     const f2 = extractFeatures(ast2, suspectTokens.length);
     f1['num_unique_tokens'] = originalTokenMap.size;
     f2['num_unique_tokens'] = suspectTokenMap.size;
-    // add levenshtein distance and similarity of ASTs
+    // Optionally add AST metrics if needed
     f2['ast_levenshtein_distance'] = astLevenshteinDistance(originalPath, suspectPath);
     f2['ast_levenshtein_similarity'] = astLevenshteinSimilarity(originalPath, suspectPath);
 
-    // Load allKeys from dataset.json for consistent feature order
-    const vec1 = Object.values(f1);
-    const vec2 = Object.values(f2);
+    // Get all keys for normalization
+    const allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
+    // Convert to normalized vector
+    function toVector(featureObj, keys) {
+      return keys.map((k) => featureObj[k] || 0);
+    }
+    const vec1 = toVector(f1, allKeys);
+    const vec2 = toVector(f2, allKeys);
     const featureVector = [...vec1, ...vec2];
     console.log('feature vector:', featureVector);
     const py = spawn('python', ['model/predict_model2.py']);
@@ -93,8 +98,13 @@ function runPrediction(f1, f2) {
   return new Promise((resolve, reject) => {
     try {
 
-      const vec1 = Object.values(f1);
-      const vec2 = Object.values(f2);
+      // --- Build normalized feature vector as in build_dataset2.js ---
+      const allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
+      function toVector(featureObj, keys) {
+        return keys.map((k) => featureObj[k] || 0);
+      }
+      const vec1 = toVector(f1, allKeys);
+      const vec2 = toVector(f2, allKeys);
       const featureVector = [...vec1, ...vec2];
       const py = spawn("python", ["model/predict_model2.py"]);
       let output = "";
@@ -170,6 +180,11 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
       };
     });
 
+    // Collect all keys for normalization
+    const allKeys = Array.from(new Set(fileData.flatMap(fd => Object.keys(fd.features))));
+    function toVector(featureObj, keys) {
+      return keys.map((k) => featureObj[k] || 0);
+    }
 
     // Compare each pair
     const comparisons = [];
@@ -180,8 +195,8 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
         const f2 = { ...fileData[j].features };
         f2['ast_levenshtein_distance'] = astLevenshteinDistance(fileData[i].path, fileData[j].path);
         f2['ast_levenshtein_similarity'] = astLevenshteinSimilarity(fileData[i].path, fileData[j].path);
-        const vec1 = Object.values(f1);
-        const vec2 = Object.values(f2);;
+        const vec1 = toVector(f1, allKeys);
+        const vec2 = toVector(f2, allKeys);
         const featureVector = [...vec1, ...vec2];
         // Use runPrediction with normalized vectors
         const result = await new Promise((resolve, reject) => {
@@ -222,13 +237,7 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
     // Cleanup: delete ZIP + extracted files
     fs.unlinkSync(zipPath);
     fileData.forEach(f => fs.unlinkSync(f.path));
-    // Use fs.rmSync for recursive directory removal (Node.js >= v14.14.0)
-    if (fs.rmSync) {
-      fs.rmSync(extractPath, { recursive: true, force: true });
-    } else {
-      // Fallback for older Node.js
-      fs.rmdirSync(extractPath, { recursive: true });
-    }
+    fs.rmdirSync(extractPath, { recursive: true });
 
     // Build report
     const report = {
