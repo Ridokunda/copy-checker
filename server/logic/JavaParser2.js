@@ -581,7 +581,7 @@ function linearizeAST(ast) {
   const sequence = [];
   function visit(node) {
     if (!node || typeof node !== "object") return;
-    if (node.node) sequence.push(node.node); // 'node' holds the type
+    if (node.node) sequence.push(node.node); 
     for (const key in node) {
       if (Array.isArray(node[key])) {
         node[key].forEach(child => visit(child));

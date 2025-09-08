@@ -179,7 +179,8 @@ final vector is:
     ast_levenshtein_distance (other),
     ast_levenshtein_similarity (other)
     ],
-    label:[1 or 0]
+    label: [
+    1 or 0]
   ]
 */
 
