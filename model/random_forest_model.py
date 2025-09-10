@@ -4,6 +4,8 @@ import joblib
 from collections import Counter
 from math import log2
 import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
 
 # --- Load Dataset ---
 with open("dataset.json", "r") as f:
@@ -160,6 +162,19 @@ print(f"           Predicted")
 print(f"          0      1")
 print(f"Actual 0  {TN}   {FP}")
 print(f"Actual 1  {FN}   {TP}")
+
+# Confusion Matrix Plot
+y_true = [label for _, label in test_set]
+y_pred = [bagging_predict(forest, row) for row, _ in test_set]
+cm = confusion_matrix(y_true, y_pred)
+plt.figure(figsize=(6, 5))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Not Plag', 'Plag'], yticklabels=['Not Plag', 'Plag'])
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Random Forest Confusion Matrix')
+plt.tight_layout()
+plt.savefig('model/confusion_matrix_random_forest.png')
+plt.close()
 
 # ROC Curve Calculation
 probs_labels = []
