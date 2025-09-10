@@ -3,12 +3,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const { parseJavaFile, extractFeatures, tokenize, getTokenMap,
-  linearizeAST,
-  levenshteinDistanceAST,
-  levenshteinSimilarityAST,
-  astLevenshteinDistance,
-  astLevenshteinSimilarity } = require('../logic/JavaParser2.js');
+const { parseJavaFile, extractFeatures, tokenize, getTokenMap, astLevenshteinDistance, astLevenshteinSimilarity } = require('../logic/JavaParser2.js');
 const AdmZip = require("adm-zip");
 
 const router = express.Router();
@@ -20,7 +15,6 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     const suspectPath = req.files['suspect'][0].path;
 
     console.log('Parsing files:', originalPath, suspectPath);
-
 
     //Build normalized feature vector as in build_dataset2.js
     const originalCode = fs.readFileSync(originalPath, 'utf-8');
@@ -36,17 +30,25 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     const f2 = extractFeatures(ast2, suspectTokens.length);
     f1['num_unique_tokens'] = originalTokenMap.size;
     f2['num_unique_tokens'] = suspectTokenMap.size;
+    //token overlap
+    let overlapCount = 0;
+    for (const [token, count] of originalTokenMap.entries()) {
+      if (suspectTokenMap.has(token)) {
+        overlapCount += Math.min(count, suspectTokenMap.get(token));
+      }
+    }
+    f1['token_overlap'] = overlapCount;
+    f2['token_overlap'] = overlapCount;
     // Add AST Levenshtein metrics
     f2['ast_levenshtein_distance'] = astLevenshteinDistance(originalPath, suspectPath);
     f2['ast_levenshtein_similarity'] = astLevenshteinSimilarity(originalPath, suspectPath);
+    f1['ast_levenshtein_distance'] = f2['ast_levenshtein_distance'];
+    f1['ast_levenshtein_similarity'] = f2['ast_levenshtein_similarity'];
 
     // Load allKeys from feature_keys.json for consistent feature order
     let allKeys;
-    try {
-      allKeys = JSON.parse(fs.readFileSync('feature_keys.json', 'utf-8'));
-    } catch (e) {
-      allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
-    }
+    allKeys = JSON.parse(fs.readFileSync('feature_keys.json', 'utf-8'));
+    
     // Convert to normalized vector
     function toVector(featureObj, keys) {
       return keys.map((k) => featureObj[k] || 0);
@@ -98,53 +100,6 @@ router.post('/predict', upload.fields([{ name: 'original' }, { name: 'suspect' }
     res.status(500).json({ success: false, error: 'Server error: ' + err.message });
   }
 });
-
-function runPrediction(f1, f2) {
-  return new Promise((resolve, reject) => {
-    try {
-
-      //Build feature vector as in build_dataset2.js
-      const allKeys = Array.from(new Set([...Object.keys(f1), ...Object.keys(f2)]));
-      function toVector(featureObj, keys) {
-        return keys.map((k) => featureObj[k] || 0);
-      }
-      const vec1 = toVector(f1, allKeys);
-      const vec2 = toVector(f2, allKeys);
-      const featureVector = [...vec1, ...vec2];
-      const py = spawn("python", ["model/predict_model2.py"]);
-      let output = "";
-      let errorOutput = "";
-
-      py.stdin.write(JSON.stringify({ features: featureVector }));
-      py.stdin.end();
-
-      py.stdout.on("data", (data) => {
-        output += data.toString();
-      });
-
-      py.stderr.on("data", (data) => {
-        errorOutput += data.toString();
-        console.error(`Python error: ${data}`);
-      });
-
-      py.on("close", (code) => {
-        if (code !== 0) {
-          console.error("Python script failed:", errorOutput);
-          return reject("Python script failed");
-        }
-        try {
-          const result = JSON.parse(output);
-          resolve(result);
-        } catch (e) {
-          console.error("Parse error:", e, output);
-          reject("Failed to parse prediction output");
-        }
-      });
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
 
 router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
   try {

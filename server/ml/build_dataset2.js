@@ -73,12 +73,14 @@ function buildDataset() {
             overlapCount += Math.min(count, plagTokenMap.get(token));
           }
         }
-        origFeatures['token_overlap'] = overlapCount;    
+        origFeatures['token_overlap'] = overlapCount;  
+         
 
         const plagAst = parseJavaFile(plag);
         const plagFeatures = extractFeatures(plagAst, plagTokens.length);
         plagFeatures['num_unique_tokens'] = plagTokenMap.size;
-        rawDataset.push({ features1: origFeatures, features2: plagFeatures, label: 1 });
+        plagFeatures['token_overlap'] = overlapCount;
+        
 
         // Compute AST-based similarity metrics
         const astLevDist = astLevenshteinDistance(orig, plag);
@@ -86,6 +88,11 @@ function buildDataset() {
 
         plagFeatures['ast_levenshtein_distance'] = astLevDist;
         plagFeatures['ast_levenshtein_similarity'] = astLevSim;
+
+        origFeatures['ast_levenshtein_distance'] = astLevDist;
+        origFeatures['ast_levenshtein_similarity'] = astLevSim;
+
+        rawDataset.push({ features1: origFeatures, features2: plagFeatures, label: 1 });
       }
 
       for (const nonPlag of nonPlagiarized) {
@@ -106,7 +113,8 @@ function buildDataset() {
         const nonAst = parseJavaFile(nonPlag);
         const nonFeatures = extractFeatures(nonAst, nonTokens.length);
         nonFeatures['num_unique_tokens'] = nonTokenMap.size;
-        rawDataset.push({ features1: origFeatures, features2: nonFeatures, label: 0 });
+        nonFeatures['token_overlap'] = overlapCount;
+        
 
         // Compute AST-based similarity metrics        
         const astLevDist = astLevenshteinDistance(orig, nonPlag);
@@ -114,6 +122,11 @@ function buildDataset() {
 
         nonFeatures['ast_levenshtein_distance'] = astLevDist;
         nonFeatures['ast_levenshtein_similarity'] = astLevSim;
+        
+        origFeatures['ast_levenshtein_distance'] = astLevDist;
+        origFeatures['ast_levenshtein_similarity'] = astLevSim;
+
+        rawDataset.push({ features1: origFeatures, features2: nonFeatures, label: 0 });
       }
     }
   }

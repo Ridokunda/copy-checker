@@ -102,7 +102,7 @@ def train_xgboost_model(X, y, test_size=0.2, random_state=42):
     plt.ylabel('Actual')
     plt.xlabel('Predicted')
     plt.tight_layout()
-    plt.savefig('confusion_matrix.png', dpi=300, bbox_inches='tight')
+    plt.savefig('confusion_matrix_xgboost.png', dpi=300, bbox_inches='tight')
     plt.show()
     
     
