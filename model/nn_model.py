@@ -177,7 +177,6 @@ class CodePlagiarismDetector:
             epochs=15, 
             batch_size=32, 
             validation_split=0.2,
-            class_weight={0: 1., 1: 3.} 
         )
         
         return history
