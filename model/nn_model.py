@@ -160,18 +160,8 @@ class CodePlagiarismDetector:
            
             abs_diff = np.abs(emb1 - emb2)
 
-            # Calculate cosine similarity
-            emb1 = np.array(emb1)
-            emb2 = np.array(emb2)
-
-            dot_product = np.dot(emb1, emb2)
-            magnitude_1 = np.linalg.norm(emb1)
-            magnitude_2 = np.linalg.norm(emb2)
-
-            similarity = dot_product / (magnitude_1 * magnitude_2)
-            
-
-            pair_features = np.concatenate([emb1, emb2, abs_diff])
+        
+            pair_features = np.concatenate([emb1, emb2])
             
             X.append(pair_features)
             y.append(label)
@@ -270,18 +260,8 @@ class CodePlagiarismDetector:
         emb2 = self.document_embedding(tokens2, self.w2v_model)
         
         abs_diff = np.abs(emb1 - emb2)
-
-        emb1 = np.array(emb1)
-        emb2 = np.array(emb2)
-
-        dot_product = np.dot(emb1, emb2)
-        magnitude_1 = np.linalg.norm(emb1)
-        magnitude_2 = np.linalg.norm(emb2)
-
-        similarity = dot_product / (magnitude_1 * magnitude_2)
-        
-        
-        pair_vector = np.concatenate([emb1, emb2, abs_diff]).reshape(1, -1)
+                
+        pair_vector = np.concatenate([emb1, emb2]).reshape(1, -1)
         
         probability = self.nn_model.predict(pair_vector, verbose=0)[0][0]
         
@@ -292,16 +272,13 @@ class CodePlagiarismDetector:
         """Save trained models to disk"""
         self.w2v_model.save(w2v_path)
         self.nn_model.save(nn_path)
-        print(f"Models saved to {w2v_path} and {nn_path}", file=sys.stderr)
     
     def load_models(self, w2v_path="code_w2v.model", nn_path="plagiarism_nn.h5"):
-        """Load trained models from disk"""
         from gensim.models import Word2Vec
         from tensorflow.keras.models import load_model
         
         self.w2v_model = Word2Vec.load(w2v_path)
         self.nn_model = load_model(nn_path)
-        print(f"Models loaded from {w2v_path} and {nn_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":

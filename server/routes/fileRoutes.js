@@ -136,7 +136,8 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
       return {
         filename: path.basename(f),
         path: f,
-        features
+        features,
+        tokenMap
       };
     });
 
@@ -159,12 +160,26 @@ router.post("/batch-upload", upload.single("zipfile"), async (req, res) => {
         // Add AST metrics for the second file in the pair
         const f1 = { ...fileData[i].features };
         const f2 = { ...fileData[j].features };
+
+        //token overlap
+        let overlapCount = 0;     
+        for (const [token, count] of fileData[i].tokenMap.entries()) {
+          if (fileData[j].tokenMap.has(token)) {
+            overlapCount += Math.min(count, fileData[j].tokenMap.get(token));
+          } 
+        }
+        f1['token_overlap'] = overlapCount;
+        f2['token_overlap'] = overlapCount;
+        
         f2['ast_levenshtein_distance'] = astLevenshteinDistance(fileData[i].path, fileData[j].path);
         f2['ast_levenshtein_similarity'] = astLevenshteinSimilarity(fileData[i].path, fileData[j].path);
+        f1['ast_levenshtein_distance'] = f2['ast_levenshtein_distance'];
+        f1['ast_levenshtein_similarity'] = f2['ast_levenshtein_similarity'];
         const vec1 = toVector(f1, allKeys);
         const vec2 = toVector(f2, allKeys);
         const featureVector = [...vec1, ...vec2];
-        // Use runPrediction with normalized vectors
+
+
         const result = await new Promise((resolve, reject) => {
           const py = spawn("python", ["model/predict_model2.py"]);
           let output = "";

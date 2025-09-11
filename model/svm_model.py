@@ -2,7 +2,7 @@ import json
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_recall_fscore_support
 import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -18,15 +18,21 @@ y = np.array([item['label'] for item in data])
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Train SVM model
-svm = SVC(kernel='rbf', probability=True, class_weight='balanced', random_state=42)
+svm = SVC(probability=True, class_weight='balanced', random_state=42)
 svm.fit(X_train, y_train)
 
-# Evaluate
+ # Evaluate the model
 y_pred = svm.predict(X_test)
-print('Classification Report:')
-print(classification_report(y_test, y_pred))
-print('Confusion Matrix:')
-print(confusion_matrix(y_test, y_pred))
+accuracy = accuracy_score(y_test, y_pred)
+precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary')
+
+print("\n" + "="*50)
+print("MODEL EVALUATION RESULTS")
+print("="*50)
+print(f"Accuracy: {accuracy:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall: {recall:.4f}")
+print(f"F1-Score: {f1:.4f}")
 
 # Plot and save confusion matrix
 cm = confusion_matrix(y_test, y_pred)
