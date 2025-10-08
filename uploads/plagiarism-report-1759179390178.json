@@ -1,0 +1,33 @@
+{
+  "totalFiles": 3,
+  "comparisons": [
+    {
+      "file1": "L2.java",
+      "file2": "T2.java",
+      "prediction": 1,
+      "confidence": [
+        0.29,
+        0.71
+      ]
+    },
+    {
+      "file1": "L2.java",
+      "file2": "Zomor2_2451041557A22145B3701B0184109CAB013.java",
+      "prediction": 0,
+      "confidence": [
+        0.69,
+        0.31
+      ]
+    },
+    {
+      "file1": "T2.java",
+      "file2": "Zomor2_2451041557A22145B3701B0184109CAB013.java",
+      "prediction": 0,
+      "confidence": [
+        0.68,
+        0.32
+      ]
+    }
+  ],
+  "submittedAt": "2025-09-29T20:56:30.178Z"
+}

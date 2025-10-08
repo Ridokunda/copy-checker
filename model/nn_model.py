@@ -20,6 +20,16 @@ class CodePlagiarismDetector:
         self.w2v_model = None
         self.nn_model = None
         
+    def cosine_similarity(self, a, b):
+        """Compute cosine similarity between two vectors, robust to zero vectors."""
+        a = np.asarray(a)
+        b = np.asarray(b)
+        norm_a = np.linalg.norm(a)
+        norm_b = np.linalg.norm(b)
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return float(np.dot(a, b) / (norm_a * norm_b))
+        
     def preprocess_code(self, file_path):
         """Clean and tokenize source code"""
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -45,7 +55,7 @@ class CodePlagiarismDetector:
             min_count=1,
             workers=4,
             sg=1,
-            epochs=10,
+            epochs=30,
             negative=15
         )
         
@@ -65,8 +75,6 @@ class CodePlagiarismDetector:
             Dropout(0.3),
             Dense(256, activation='relu'),
             Dropout(0.3),
-            Dense(128, activation='relu'),
-            Dropout(0.2),
             Dense(64, activation='relu'),
             Dense(1, activation='sigmoid')
         ])
@@ -156,12 +164,10 @@ class CodePlagiarismDetector:
             
             emb1 = self.document_embedding(tokens1, self.w2v_model)
             emb2 = self.document_embedding(tokens2, self.w2v_model)
-            #print(emb1)
-           
-            abs_diff = np.abs(emb1 - emb2)
-
-        
-            pair_features = np.concatenate([emb1, emb2])
+            
+            # compute cosine similarity and build final feature vector: [emb1, emb2, cos_sim]
+            cos_sim = self.cosine_similarity(emb1, emb2)
+            pair_features = np.concatenate([emb1, emb2, np.array([cos_sim])])
             
             X.append(pair_features)
             y.append(label)
@@ -174,9 +180,10 @@ class CodePlagiarismDetector:
         self.nn_model = self.create_similarity_model(X.shape[1])
         history = self.nn_model.fit(
             X, y, 
-            epochs=15, 
+            epochs=30, 
             batch_size=32, 
             validation_split=0.2,
+            class_weight={0: 1., 1: 3.}
         )
         
         return history
@@ -258,9 +265,9 @@ class CodePlagiarismDetector:
         emb1 = self.document_embedding(tokens1, self.w2v_model)
         emb2 = self.document_embedding(tokens2, self.w2v_model)
         
-        abs_diff = np.abs(emb1 - emb2)
-                
-        pair_vector = np.concatenate([emb1, emb2]).reshape(1, -1)
+        # append cosine similarity to the concatenated embeddings
+        cos_sim = self.cosine_similarity(emb1, emb2)
+        pair_vector = np.concatenate([emb1, emb2, np.array([cos_sim])]).reshape(1, -1)
         
         probability = self.nn_model.predict(pair_vector, verbose=0)[0][0]
         
