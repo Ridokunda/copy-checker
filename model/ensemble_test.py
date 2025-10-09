@@ -37,28 +37,19 @@ rf_probs = np.array([bagging_predict_proba(rf, x) for x in X])
 lr_probs = lr.predict_proba(X)[:, 1]
 
 
-def normalize_weights(ws):
-    ws = np.array(ws, dtype=float)
-    s = ws.sum()
-    if s == 0:
-        return np.ones_like(ws) / len(ws)
-    return ws / s
-
 
 def evaluate_weights(ws):
-    w = normalize_weights(ws)
-    probs = w[0]*svm_probs + w[1]*xgb_probs + w[2]*rf_probs + w[3]*lr_probs
+    probs = ws[0]*svm_probs + ws[1]*xgb_probs + ws[2]*rf_probs + ws[3]*lr_probs
     preds = (probs > 0.5).astype(int)
     acc = (preds == y).mean()
     try:
         auc = roc_auc_score(y, probs)
     except Exception:
         auc = float('nan')
-    return acc, auc, preds, probs, w
+    return acc, auc, preds, probs, ws
 
 
 def grid_search_weights(step=0.1):
-    # enumerate weights that sum to 1 with given step
     steps = int(round(1.0 / step))
     best = {'acc': -1, 'auc': -1, 'weights': None, 'preds': None, 'probs': None}
     for a in range(0, steps+1):
@@ -73,12 +64,9 @@ def grid_search_weights(step=0.1):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Ensemble weighted search')
-    parser.add_argument('--grid-step', type=float, default=0.1, help='Grid step for weights (default 0.1)')
-    args = parser.parse_args()
-
-    print(f'Running grid search with step={args.grid_step}...')
-    best = grid_search_weights(step=args.grid_step)
+    
+    print(f'Running grid search')
+    best = grid_search_weights()
     print(f"Best acc: {best['acc']:.4f}, AUC: {best['auc']:.4f}")
     print('Best weights (SVM, XGB, RF, LR):', best['weights'].tolist())
     print('Classification Report for best weights:')
