@@ -3,6 +3,7 @@ import json
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
 import joblib
+from sklearn.model_selection import train_test_split
 
 # Load dataset
 with open('dataset.json', 'r') as f:
@@ -10,6 +11,12 @@ with open('dataset.json', 'r') as f:
 
 X = np.array([item['features'] for item in data])
 y = np.array([item['label'] for item in data])
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+
+X = X_test
+y = y_test
 
 # Load models
 svm = joblib.load('svm_model.pkl')
